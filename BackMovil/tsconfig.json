@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "rootDir": "src",
+    "rootDir": "",
     "outDir": "dist",
     "module": "commonjs",
     "target": "ES2020",
@@ -13,6 +13,6 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*","prisma.config.ts"],
   "exclude": ["node_modules", "dist"]
 }
