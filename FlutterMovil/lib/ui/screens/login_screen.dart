@@ -30,15 +30,22 @@ class _LoginScreenState extends State<LoginScreen> {
       _loading = true;
     });
 
-    final ok = await context.read<AuthController>().login(
-          email: _email.text.trim(),
-          password: _password.text,
-        );
+    try {
+      final ok = await context.read<AuthController>().login(
+            email: _email.text.trim(),
+            password: _password.text,
+          );
 
-    if (!mounted) return;
-    setState(() => _loading = false);
-    if (!ok) {
-      setState(() => _error = 'Credenciales incorrectas. Acceso denegado.');
+      if (!mounted) return;
+
+      if (!ok) {
+        setState(() => _error = 'Credenciales incorrectas. Acceso denegado.');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = 'Error de conexión. Verifica tu red.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -133,12 +140,22 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: 10),
-                      Text(
-                        _error!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xFFEF4444),
-                          fontWeight: FontWeight.w600,
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF2F2),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFEE2E2)),
+                        ),
+                        child: Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Color(0xFFDC2626),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ],
@@ -151,15 +168,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(AppColors.primary),
                         ),
-                        child: Text(_loading ? 'Verificando...' : 'Ingresar'),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'Usa: admin@mariachi.com / 123456',
-                      style: TextStyle(
-                        color: Color(AppColors.textMuted),
-                        fontSize: 12,
+                        child: _loading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text(
+                                'Ingresar',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -172,4 +196,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

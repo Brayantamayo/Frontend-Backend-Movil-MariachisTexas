@@ -7,7 +7,7 @@ import '../widgets/bottom_nav.dart';
 import 'clientes_screen.dart';
 import 'cotizaciones_screen.dart';
 import 'ensayos_screen.dart';
-import 'menu_screen.dart';
+
 import 'repertorio_screen.dart';
 import 'reservas_screen.dart';
 
@@ -25,7 +25,7 @@ class _ShellScreenState extends State<ShellScreen> {
     ReservasScreen(),
     CotizacionesScreen(),
     ClientesScreen(),
-    MenuScreen(),
+    
     RepertorioScreen(),
     EnsayosScreen(),
   ];
