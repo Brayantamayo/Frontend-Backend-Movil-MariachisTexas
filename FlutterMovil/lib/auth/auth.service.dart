@@ -1,13 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  // ─── Cambia esta constante según dónde corras la app ───────────────────────
-  //  Emulador Android               → 'http://10.0.2.2:3000'
-  //  Simulador iOS / Flutter Web    → 'http://localhost:3000'
-  //  Dispositivo físico             → 'http://TU_IP_LOCAL:3000'
-  //    (ej: ipconfig en Windows o ifconfig en Mac para ver tu IP)
-  // ──────────────────────────────────────────────────────────────────────────
+
   static const String baseUrl = 'http://localhost:3000';
 
   Future<Map<String, dynamic>> login({
@@ -28,6 +24,11 @@ class AuthService {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200) {
+
+        // 🔥 AQUÍ GUARDAS EL TOKEN
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', body['token']);
+
         return body;
       } else {
         throw Exception(body['message'] ?? 'Error al iniciar sesión');
