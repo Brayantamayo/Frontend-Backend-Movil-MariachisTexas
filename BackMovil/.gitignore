@@ -38,4 +38,9 @@ prisma/generated/
 .vscode/
 
 # cache
+<<<<<<< HEAD
 .cache
+=======
+.cache
+
+>>>>>>> brayan

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../core/format/currency.dart';
-import '../../core/theme/app_colors.dart';
+import '../core/format/currency.dart';
+import '../core/theme/app_colors.dart';
 
 enum EstadoCotizacion { enEspera, convertida, anulada }
 

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../app/app_controller.dart';
 import '../auth/auth_controller.dart';
 import '../core/theme/app_colors.dart';
-import 'screens/login_screen.dart';
+import '../auth/login_screen.dart';
 import 'screens/shell_screen.dart';
 import 'widgets/splash_screen.dart';
 
