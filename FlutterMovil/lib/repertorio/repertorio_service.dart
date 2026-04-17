@@ -4,9 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'cancion.model.dart';
 
 class RepertorioService {
-  // Cambia esto por tu IP real cuando pruebes en dispositivo físico.
-  // En emulador Android usa 10.0.2.2, en iOS simulator usa localhost.
-  static const String _baseUrl = 'http://localhost:3000';
+static const String _baseUrl = 'http://localhost:3000';
 
   // ── Token ────────────────────────────────────────────────────────────────────
 
