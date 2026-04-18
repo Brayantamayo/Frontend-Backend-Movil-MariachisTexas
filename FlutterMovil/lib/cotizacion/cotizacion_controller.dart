@@ -111,9 +111,8 @@ class CotizacionController extends ChangeNotifier {
     print('🔍 CotizacionController: Iniciando anulación de cotización $id');
 
     try {
-      final actualizada = await _service.anularCotizacion(id);
-      print(
-          '✅ CotizacionController: Servicio completado - Estado: ${actualizada.estado}');
+      await _service.anularCotizacion(id);
+      print('✅ CotizacionController: Servicio completado');
 
       // Actualizar estado local
       final idx = _todas.indexWhere((c) => c.id == id);
@@ -122,7 +121,7 @@ class CotizacionController extends ChangeNotifier {
       if (idx != -1) {
         print(
             '🔍 CotizacionController: Estado anterior: ${_todas[idx].estado}');
-        _todas[idx].estado = actualizada.estado;
+        _todas[idx].estado = EstadoCotizacion.anulada;
         print(
             '🔍 CotizacionController: Estado actualizado: ${_todas[idx].estado}');
         notifyListeners();

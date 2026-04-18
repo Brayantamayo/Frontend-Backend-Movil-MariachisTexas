@@ -14,7 +14,6 @@ import 'repertorio_controller.dart';
 class _GlobalPlayer {
   static final AudioPlayer _player = AudioPlayer();
   static AudioPlayer get instance => _player;
-  static int? playingId;
 }
 
 class RepertorioScreen extends StatefulWidget {
@@ -54,11 +53,11 @@ class _RepertorioScreenState extends State<RepertorioScreen> {
       if (mounted) setState(() => _duration = dur);
     }));
     _subs.add(p.onPlayerComplete.listen((_) {
-      if (mounted) setState(() {
-        _playingId = null;
-        _GlobalPlayer.playingId = null;
-        _position = Duration.zero;
-      });
+      if (mounted)
+        setState(() {
+          _playingId = null;
+          _position = Duration.zero;
+        });
     }));
   }
 
@@ -95,7 +94,6 @@ class _RepertorioScreenState extends State<RepertorioScreen> {
       await p.stop();
       setState(() {
         _playingId = c.id;
-        _GlobalPlayer.playingId = c.id;
         _position = Duration.zero;
         _duration = Duration.zero;
       });
@@ -107,7 +105,6 @@ class _RepertorioScreenState extends State<RepertorioScreen> {
     await _GlobalPlayer.instance.stop();
     setState(() {
       _playingId = null;
-      _GlobalPlayer.playingId = null;
       _position = Duration.zero;
     });
   }
@@ -160,7 +157,8 @@ class _RepertorioScreenState extends State<RepertorioScreen> {
                 _togglePlay(c);
               },
               onClose: _stopPlay,
-              onSeek: (v) => _GlobalPlayer.instance.seek(Duration(milliseconds: v.round())),
+              onSeek: (v) => _GlobalPlayer.instance
+                  .seek(Duration(milliseconds: v.round())),
               canciones: context.watch<RepertorioController>().canciones,
             ),
 
@@ -203,7 +201,8 @@ class _Header extends StatelessWidget {
                   color: const Color(AppColors.primary),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.queue_music, color: Colors.white, size: 20),
+                child: const Icon(Icons.queue_music,
+                    color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               const Column(
@@ -211,7 +210,10 @@ class _Header extends StatelessWidget {
                 children: [
                   Text(
                     'Repertorio',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF1A1A2E)),
+                    style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF1A1A2E)),
                   ),
                   Text(
                     'Canciones disponibles',
@@ -226,16 +228,25 @@ class _Header extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4))
+              ],
             ),
             child: TextField(
               controller: controller,
               onChanged: onSearch,
               decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF9CA3AF), size: 20),
+                prefixIcon: const Icon(Icons.search,
+                    color: Color(0xFF9CA3AF), size: 20),
                 hintText: 'Buscar canción o artista...',
-                hintStyle: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                hintStyle:
+                    const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -278,7 +289,8 @@ class _MiniPlayer extends StatelessWidget {
     final c = canciones.where((x) => x.id == playingId).firstOrNull;
     final isPlaying = playerState == PlayerState.playing;
     // Conversión explícita a double para evitar errores de tipo num
-    final maxMs = duration.inMilliseconds == 0 ? 1.0 : duration.inMilliseconds.toDouble();
+    final maxMs =
+        duration.inMilliseconds == 0 ? 1.0 : duration.inMilliseconds.toDouble();
     final curMs = position.inMilliseconds.toDouble().clamp(0.0, maxMs);
 
     return Container(
@@ -288,7 +300,12 @@ class _MiniPlayer extends StatelessWidget {
           colors: [Color(AppColors.primary), Color(0xFFE53E3E)],
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: const Color(AppColors.primary).withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 6))],
+        boxShadow: [
+          BoxShadow(
+              color: const Color(AppColors.primary).withOpacity(0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6))
+        ],
       ),
       child: Column(
         children: [
@@ -300,7 +317,10 @@ class _MiniPlayer extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: c?.portada != null
-                      ? Image.network(c!.portada!, width: 44, height: 44, fit: BoxFit.cover,
+                      ? Image.network(c!.portada!,
+                          width: 44,
+                          height: 44,
+                          fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => _defaultCover(44))
                       : _defaultCover(44),
                 ),
@@ -312,24 +332,34 @@ class _MiniPlayer extends StatelessWidget {
                       Text(
                         c?.titulo ?? '',
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13),
                       ),
                       Text(
                         c?.artista ?? '',
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Color(0xFFFFCDD2), fontSize: 11),
+                        style: const TextStyle(
+                            color: Color(0xFFFFCDD2), fontSize: 11),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
                   onPressed: onPlayPause,
-                  icon: Icon(isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled, size: 36, color: Colors.white),
+                  icon: Icon(
+                      isPlaying
+                          ? Icons.pause_circle_filled
+                          : Icons.play_circle_filled,
+                      size: 36,
+                      color: Colors.white),
                   padding: EdgeInsets.zero,
                 ),
                 IconButton(
                   onPressed: onClose,
-                  icon: const Icon(Icons.close, size: 18, color: Color(0xFFFFCDD2)),
+                  icon: const Icon(Icons.close,
+                      size: 18, color: Color(0xFFFFCDD2)),
                   padding: EdgeInsets.zero,
                 ),
               ],
@@ -340,26 +370,31 @@ class _MiniPlayer extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 4),
             child: Row(
               children: [
-                Text(_mmss(position), style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                Text(_mmss(position),
+                    style:
+                        const TextStyle(color: Colors.white70, fontSize: 10)),
                 Expanded(
                   child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       trackHeight: 2,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+                      thumbShape:
+                          const RoundSliderThumbShape(enabledThumbRadius: 5),
                       overlayShape: SliderComponentShape.noOverlay,
                       activeTrackColor: Colors.white,
                       inactiveTrackColor: Colors.white30,
                       thumbColor: Colors.white,
                     ),
                     child: Slider(
-                      value: curMs,      // double
-                      min: 0.0,          // double explícito
-                      max: maxMs,        // double
+                      value: curMs, // double
+                      min: 0.0, // double explícito
+                      max: maxMs, // double
                       onChanged: onSeek,
                     ),
                   ),
                 ),
-                Text(_mmss(duration), style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                Text(_mmss(duration),
+                    style:
+                        const TextStyle(color: Colors.white70, fontSize: 10)),
               ],
             ),
           ),
@@ -371,7 +406,8 @@ class _MiniPlayer extends StatelessWidget {
   Widget _defaultCover(double size) => Container(
         width: size,
         height: size,
-        decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(
+            color: Colors.white24, borderRadius: BorderRadius.circular(10)),
         child: const Icon(Icons.music_note, color: Colors.white54, size: 20),
       );
 }
@@ -397,7 +433,8 @@ class _Body extends StatelessWidget {
     final ctrl = context.watch<RepertorioController>();
 
     if (ctrl.status == RepertorioStatus.cargando) {
-      return const Center(child: CircularProgressIndicator(color: Color(AppColors.primary)));
+      return const Center(
+          child: CircularProgressIndicator(color: Color(AppColors.primary)));
     }
 
     if (ctrl.status == RepertorioStatus.error) {
@@ -405,15 +442,19 @@ class _Body extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off_rounded, size: 48, color: Color(0xFFE2E8F0)),
+            const Icon(Icons.wifi_off_rounded,
+                size: 48, color: Color(0xFFE2E8F0)),
             const SizedBox(height: 12),
-            Text(ctrl.errorMsg, style: const TextStyle(color: Color(0xFF9CA3AF)), textAlign: TextAlign.center),
+            Text(ctrl.errorMsg,
+                style: const TextStyle(color: Color(0xFF9CA3AF)),
+                textAlign: TextAlign.center),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: () => context.read<RepertorioController>().cargar(),
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
-              style: FilledButton.styleFrom(backgroundColor: const Color(AppColors.primary)),
+              style: FilledButton.styleFrom(
+                  backgroundColor: const Color(AppColors.primary)),
             ),
           ],
         ),
@@ -425,9 +466,11 @@ class _Body extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.library_music_outlined, size: 52, color: Color(0xFFE2E8F0)),
+            Icon(Icons.library_music_outlined,
+                size: 52, color: Color(0xFFE2E8F0)),
             SizedBox(height: 12),
-            Text('No se encontraron canciones', style: TextStyle(color: Color(0xFF9CA3AF))),
+            Text('No se encontraron canciones',
+                style: TextStyle(color: Color(0xFF9CA3AF))),
           ],
         ),
       );
@@ -438,7 +481,8 @@ class _Body extends StatelessWidget {
       itemCount: ctrl.canciones.length,
       itemBuilder: (_, i) {
         final c = ctrl.canciones[i];
-        final isThisPlaying = playingId == c.id && playerState == PlayerState.playing;
+        final isThisPlaying =
+            playingId == c.id && playerState == PlayerState.playing;
         final isThisActive = playingId == c.id;
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -483,7 +527,9 @@ class _CancionCard extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isActive ? const Color(AppColors.primary).withOpacity(0.4) : const Color(0xFFF1F5F9),
+            color: isActive
+                ? const Color(AppColors.primary).withOpacity(0.4)
+                : const Color(0xFFF1F5F9),
             width: isActive ? 1.5 : 1,
           ),
           boxShadow: [
@@ -518,7 +564,8 @@ class _CancionCard extends StatelessWidget {
             // ── Info ───────────────────────────────────────────────────────
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -528,14 +575,17 @@ class _CancionCard extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
-                        color: isActive ? const Color(AppColors.primary) : const Color(0xFF1A1A2E),
+                        color: isActive
+                            ? const Color(AppColors.primary)
+                            : const Color(0xFF1A1A2E),
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       c.artista,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF9CA3AF)),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -570,7 +620,9 @@ class _CancionCard extends StatelessWidget {
                     ),
                     child: Icon(
                       isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: isPlaying ? Colors.white : const Color(AppColors.primary),
+                      color: isPlaying
+                          ? Colors.white
+                          : const Color(AppColors.primary),
                       size: 22,
                     ),
                   ),
@@ -594,7 +646,8 @@ class _CancionCard extends StatelessWidget {
             colors: [Color(0xFFFEE2E2), Color(0xFFFECDD3)],
           ),
         ),
-        child: const Icon(Icons.music_note, color: Color(AppColors.primary), size: 28),
+        child: const Icon(Icons.music_note,
+            color: Color(AppColors.primary), size: 28),
       );
 
   static Widget _chip(String text) => Container(
@@ -605,7 +658,11 @@ class _CancionCard extends StatelessWidget {
         ),
         child: Text(
           text,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFBE123C), letterSpacing: 0.3),
+          style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFBE123C),
+              letterSpacing: 0.3),
         ),
       );
 
@@ -617,7 +674,11 @@ class _CancionCard extends StatelessWidget {
         ),
         child: const Text(
           'Inactiva',
-          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8), letterSpacing: 0.3),
+          style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF94A3B8),
+              letterSpacing: 0.3),
         ),
       );
 }
@@ -647,7 +708,8 @@ class _DetalleDialog extends StatelessWidget {
                 height: 180,
                 width: double.infinity,
                 child: cancion.portada != null
-                    ? Image.network(cancion.portada!, fit: BoxFit.cover,
+                    ? Image.network(cancion.portada!,
+                        fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => _headerDefault())
                     : _headerDefault(),
               ),
@@ -660,10 +722,15 @@ class _DetalleDialog extends StatelessWidget {
                   children: [
                     Text(
                       cancion.titulo,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF1A1A2E)),
+                      style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF1A1A2E)),
                     ),
                     const SizedBox(height: 4),
-                    Text(cancion.artista, style: const TextStyle(color: Color(0xFF9CA3AF), fontSize: 14)),
+                    Text(cancion.artista,
+                        style: const TextStyle(
+                            color: Color(0xFF9CA3AF), fontSize: 14)),
                     const SizedBox(height: 14),
 
                     // Chips de info
@@ -676,7 +743,9 @@ class _DetalleDialog extends StatelessWidget {
                         _infoChip(Icons.timer_outlined, cancion.duracion),
                         _infoChip(Icons.bar_chart, cancion.dificultad),
                         _infoChip(
-                          cancion.activa ? Icons.check_circle_outline : Icons.cancel_outlined,
+                          cancion.activa
+                              ? Icons.check_circle_outline
+                              : Icons.cancel_outlined,
                           cancion.activa ? 'Activa' : 'Inactiva',
                         ),
                       ],
@@ -687,7 +756,11 @@ class _DetalleDialog extends StatelessWidget {
                       const SizedBox(height: 20),
                       const Text(
                         'LETRA',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF9CA3AF), letterSpacing: 1.2),
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF9CA3AF),
+                            letterSpacing: 1.2),
                       ),
                       const SizedBox(height: 8),
                       Container(
@@ -702,7 +775,11 @@ class _DetalleDialog extends StatelessWidget {
                         child: SingleChildScrollView(
                           child: Text(
                             cancion.letra!,
-                            style: const TextStyle(height: 1.6, fontStyle: FontStyle.italic, fontSize: 13, color: Color(0xFF374151)),
+                            style: const TextStyle(
+                                height: 1.6,
+                                fontStyle: FontStyle.italic,
+                                fontSize: 13,
+                                color: Color(0xFF374151)),
                           ),
                         ),
                       ),
@@ -721,7 +798,8 @@ class _DetalleDialog extends StatelessWidget {
                             side: const BorderSide(color: Color(0xFFFEE2E2)),
                           ),
                         ),
-                        child: const Text('Cerrar', style: TextStyle(fontWeight: FontWeight.w700)),
+                        child: const Text('Cerrar',
+                            style: TextStyle(fontWeight: FontWeight.w700)),
                       ),
                     ),
                   ],
@@ -742,7 +820,8 @@ class _DetalleDialog extends StatelessWidget {
             colors: [Color(AppColors.primary), Color(0xFFE53E3E)],
           ),
         ),
-        child: const Center(child: Icon(Icons.music_note, color: Colors.white54, size: 64)),
+        child: const Center(
+            child: Icon(Icons.music_note, color: Colors.white54, size: 64)),
       );
 
   static Widget _infoChip(IconData icon, String label) => Container(
@@ -756,7 +835,11 @@ class _DetalleDialog extends StatelessWidget {
           children: [
             Icon(icon, size: 13, color: const Color(AppColors.primary)),
             const SizedBox(width: 5),
-            Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFFBE123C))),
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFFBE123C))),
           ],
         ),
       );
