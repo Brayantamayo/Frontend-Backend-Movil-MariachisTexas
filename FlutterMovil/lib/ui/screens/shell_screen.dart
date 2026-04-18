@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../auth/auth_controller.dart';
 import '../../core/theme/app_colors.dart';
-import '../../clientes/clientes_screen.dart';
+import '../../app/clientes/clientes_screen.dart';
 import '../../cotizacion/cotizaciones_screen.dart';
 import '../../ensayos/ensayos_screen.dart';
 import '../../repertorio/repertorio_screen.dart';

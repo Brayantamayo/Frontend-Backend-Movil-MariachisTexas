@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 
 class AppController extends ChangeNotifier {
@@ -11,10 +10,8 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> _boot() async {
-    // Simula carga inicial (fuentes, sesión, etc.) como en React.
     await Future<void>.delayed(const Duration(seconds: 2));
     _isSplash = false;
     notifyListeners();
   }
 }
-
