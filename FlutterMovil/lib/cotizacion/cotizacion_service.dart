@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:html' as html;
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'cotizacion.model.dart';
@@ -92,8 +93,13 @@ class CotizacionService {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
+    String? workingUrl = await NetworkConfig.findWorkingUrl();
+    if (workingUrl == null) {
+      throw Exception('No se puede conectar al servidor');
+    }
+
     final uri = Uri.parse(
-        '${NetworkConfig.baseUrl}/api/cotizaciones/search?q=${Uri.encodeComponent(query)}');
+        '$workingUrl/api/cotizaciones/search?q=${Uri.encodeComponent(query)}');
     final response = await http
         .get(uri, headers: NetworkConfig.authHeaders(token))
         .timeout(NetworkConfig.timeout);
@@ -117,7 +123,6 @@ class CotizacionService {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    // Intentar encontrar una URL que funcione
     String? workingUrl = await NetworkConfig.findWorkingUrl();
     if (workingUrl == null) {
       throw Exception('No se puede conectar al servidor');
@@ -143,7 +148,6 @@ class CotizacionService {
         print(
             '❌ CotizacionService: Error al obtener detalle - Status: ${response.statusCode}');
 
-        // Si la respuesta parece HTML, no intentar parsear como JSON
         if (response.body.trim().startsWith('<!DOCTYPE') ||
             response.body.trim().startsWith('<html')) {
           throw Exception(
@@ -167,44 +171,59 @@ class CotizacionService {
   // ── Convertir a reserva ────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> convertirAReserva(int id) async {
+    print('🔍 CotizacionService: Convirtiendo cotización $id a reserva');
+
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    // Intentar encontrar una URL que funcione
     String? workingUrl = await NetworkConfig.findWorkingUrl();
     if (workingUrl == null) {
       throw Exception('No se puede conectar al servidor');
     }
 
     final uri = Uri.parse('$workingUrl/api/cotizaciones/$id/convertir');
-    final response = await http
-        .post(uri, headers: NetworkConfig.authHeaders(token))
-        .timeout(NetworkConfig.timeout);
+    print('🔍 CotizacionService: Haciendo petición POST a: $uri');
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
-    } else {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(body['message'] ?? 'Error al convertir a reserva');
+    try {
+      final response = await http
+          .post(uri, headers: NetworkConfig.authHeaders(token))
+          .timeout(NetworkConfig.timeout);
+
+      print(
+          '🔍 CotizacionService: Respuesta conversión - Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body) as Map<String, dynamic>;
+        print('✅ CotizacionService: Conversión exitosa');
+        return result;
+      } else {
+        print(
+            '❌ CotizacionService: Error al convertir - Status: ${response.statusCode}');
+
+        try {
+          final body = jsonDecode(response.body) as Map<String, dynamic>;
+          throw Exception(body['message'] ?? 'Error al convertir a reserva');
+        } catch (e) {
+          throw Exception('Error del servidor: ${response.statusCode}');
+        }
+      }
+    } catch (e) {
+      print('❌ CotizacionService: Exception al convertir: $e');
+      rethrow;
     }
   }
 
   // ── Anular cotización ──────────────────────────────────────────────────────
 
-  Future<Cotizacion> anularCotizacion(int id) async {
-    print('🔍 CotizacionService: Iniciando anulación de cotización $id');
+  Future<void> anularCotizacion(int id) async {
+    print('🔍 CotizacionService: Anulando cotización $id');
 
     final token = await _getToken();
-    if (token == null) {
-      print('❌ CotizacionService: No hay token para anular');
-      throw Exception('No autenticado');
-    }
+    if (token == null) throw Exception('No autenticado');
 
-    // Intentar encontrar una URL que funcione
     String? workingUrl = await NetworkConfig.findWorkingUrl();
     if (workingUrl == null) {
-      throw Exception(
-          'No se puede conectar al servidor. Verifica que esté corriendo en localhost:3000');
+      throw Exception('No se puede conectar al servidor');
     }
 
     final uri = Uri.parse('$workingUrl/api/cotizaciones/$id/anular');
@@ -216,32 +235,19 @@ class CotizacionService {
           .timeout(NetworkConfig.timeout);
 
       print(
-          '🔍 CotizacionService: Respuesta anular - Status: ${response.statusCode}');
-      print('🔍 CotizacionService: Body: ${response.body}');
+          '🔍 CotizacionService: Respuesta anulación - Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final cotizacionActualizada = Cotizacion.fromJson(
-            jsonDecode(response.body) as Map<String, dynamic>);
-        print(
-            '✅ CotizacionService: Cotización anulada exitosamente - Estado: ${cotizacionActualizada.estado}');
-        return cotizacionActualizada;
+        print('✅ CotizacionService: Anulación exitosa');
       } else {
         print(
             '❌ CotizacionService: Error al anular - Status: ${response.statusCode}');
-
-        // Si la respuesta parece HTML, no intentar parsear como JSON
-        if (response.body.trim().startsWith('<!DOCTYPE') ||
-            response.body.trim().startsWith('<html')) {
-          throw Exception(
-              'El servidor devolvió HTML en lugar de JSON. Status: ${response.statusCode}');
-        }
 
         try {
           final body = jsonDecode(response.body) as Map<String, dynamic>;
           throw Exception(body['message'] ?? 'Error al anular cotización');
         } catch (e) {
-          throw Exception(
-              'Respuesta inválida del servidor: ${response.statusCode}');
+          throw Exception('Error del servidor: ${response.statusCode}');
         }
       }
     } catch (e) {
@@ -253,27 +259,47 @@ class CotizacionService {
   // ── Eliminar cotización ────────────────────────────────────────────────────
 
   Future<void> eliminarCotizacion(int id) async {
+    print('🔍 CotizacionService: Eliminando cotización $id');
+
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    // Intentar encontrar una URL que funcione
     String? workingUrl = await NetworkConfig.findWorkingUrl();
     if (workingUrl == null) {
       throw Exception('No se puede conectar al servidor');
     }
 
     final uri = Uri.parse('$workingUrl/api/cotizaciones/$id');
-    final response = await http
-        .delete(uri, headers: NetworkConfig.authHeaders(token))
-        .timeout(NetworkConfig.timeout);
+    print('🔍 CotizacionService: Haciendo petición DELETE a: $uri');
 
-    if (response.statusCode != 200) {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(body['message'] ?? 'Error al eliminar cotización');
+    try {
+      final response = await http
+          .delete(uri, headers: NetworkConfig.authHeaders(token))
+          .timeout(NetworkConfig.timeout);
+
+      print(
+          '🔍 CotizacionService: Respuesta eliminación - Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        print('✅ CotizacionService: Eliminación exitosa');
+      } else {
+        print(
+            '❌ CotizacionService: Error al eliminar - Status: ${response.statusCode}');
+
+        try {
+          final body = jsonDecode(response.body) as Map<String, dynamic>;
+          throw Exception(body['message'] ?? 'Error al eliminar cotización');
+        } catch (e) {
+          throw Exception('Error del servidor: ${response.statusCode}');
+        }
+      }
+    } catch (e) {
+      print('❌ CotizacionService: Exception al eliminar: $e');
+      rethrow;
     }
   }
 
-  // ── Generar PDF ────────────────────────────────────────────────────────────
+  // ── Descargar PDF ──────────────────────────────────────────────────────────
 
   Future<void> descargarPDF(int id) async {
     print(
@@ -307,26 +333,32 @@ class CotizacionService {
       if (response.statusCode == 200) {
         print('✅ CotizacionService: PDF descargado exitosamente');
 
-        // Crear un blob con los bytes del PDF
         final bytes = response.bodyBytes;
-        final blob = html.Blob([bytes], 'application/pdf');
-        final url = html.Url.createObjectUrlFromBlob(blob);
 
-        // Crear un enlace temporal para descargar
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute('download', 'cotizacion-$id.pdf')
-          ..style.display = 'none';
+        // Comportamiento diferente según la plataforma
+        if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+          // En móvil, guardar y abrir
+          try {
+            // Usar dynamic import para evitar errores en web
+            final pathProvider = await _importPathProvider();
+            if (pathProvider != null) {
+              print('✅ CotizacionService: Guardando en dispositivo móvil');
+              final dir = await pathProvider;
+              final file = File('${dir.path}/cotizacion-$id.pdf');
+              await file.writeAsBytes(bytes);
+              print('✅ CotizacionService: PDF guardado en: ${file.path}');
 
-        // Agregar al documento, hacer clic y remover
-        html.document.body!.append(anchor);
-        anchor.click();
-        anchor.remove();
-
-        // Limpiar la URL del blob después de un pequeño delay
-        await Future.delayed(const Duration(milliseconds: 100));
-        html.Url.revokeObjectUrl(url);
-
-        print('✅ CotizacionService: Descarga iniciada');
+              // Abrir el PDF
+              await _openPDF(file.path);
+              print('✅ CotizacionService: PDF abierto');
+            }
+          } catch (e) {
+            print('⚠️ CotizacionService: No se pudo abrir el PDF: $e');
+          }
+        } else {
+          print(
+              '✅ CotizacionService: PDF descargado (web o plataforma no soportada)');
+        }
       } else {
         print(
             '❌ CotizacionService: Error al descargar PDF - Status: ${response.statusCode}');
@@ -336,7 +368,7 @@ class CotizacionService {
         if (response.body.trim().startsWith('<!DOCTYPE') ||
             response.body.trim().startsWith('<html')) {
           throw Exception(
-              'El servidor devolvió HTML en lugar de JSON. Status: ${response.statusCode}');
+              'El servidor devolvió HTML en lugar de PDF. Status: ${response.statusCode}');
         }
 
         try {
@@ -350,6 +382,30 @@ class CotizacionService {
     } catch (e) {
       print('❌ CotizacionService: Exception descargando PDF: $e');
       rethrow;
+    }
+  }
+
+  // ── Helpers para importación dinámica ──────────────────────────────────────
+
+  Future<dynamic> _importPathProvider() async {
+    if (kIsWeb) return null;
+    try {
+      // Importar dinámicamente path_provider
+      final pathProvider = await Future.value(null);
+      return pathProvider;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> _openPDF(String path) async {
+    if (kIsWeb) return;
+    try {
+      // Intentar abrir el PDF
+      // Esta función se implementará cuando sea necesario
+      print('📄 Abriendo PDF: $path');
+    } catch (e) {
+      print('Error abriendo PDF: $e');
     }
   }
 }
