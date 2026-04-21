@@ -7,13 +7,13 @@ class ClientesController extends ChangeNotifier {
   bool isLoading = false;
   String? error;
 
-  Future<void> cargarClientes() async {
+  Future<void> cargarClientes(String token) async {
     isLoading = true;
     error = null;
     notifyListeners();
 
     try {
-      clientes = await ClienteService.obtenerClientes();
+      clientes = await ClienteService.obtenerClientes(token);
     } catch (e) {
       error = 'Error al cargar clientes';
       debugPrint(e.toString());
