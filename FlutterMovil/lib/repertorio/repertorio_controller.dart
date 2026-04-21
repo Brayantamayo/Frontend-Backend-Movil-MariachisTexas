@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'cancion.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import 'repertorio_service.dart';
 
 enum RepertorioStatus { inicial, cargando, listo, error }

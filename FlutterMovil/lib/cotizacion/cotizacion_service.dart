@@ -6,7 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import '../core/config/network_config.dart';
-import 'cotizacion.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 
 class CotizacionService {
   static const _storage = FlutterSecureStorage();

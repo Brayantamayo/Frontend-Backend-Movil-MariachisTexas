@@ -1,18 +1,17 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'reserva.model.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import '../core/config/network_config.dart';
 
 class ReservaService {
-  // ── Token ─────────────────────────────────────────────────────────────────
+// ── Token ─────────────────────────────────────────────────────────────────
 
-  Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
-  }
+  static const _storage = FlutterSecureStorage();
+  Future<String?> _getToken() => _storage.read(key: 'token');
 
-  // ── Utilidades privadas ────────────────────────────────────────────────────
+
+// ── Utilidades privadas ────────────────────────────────────────────────────
 
   String _resolveBaseUrl() => NetworkConfig.baseUrl;
 
@@ -31,7 +30,8 @@ class ReservaService {
     }
   }
 
-  // ── Listar reservas ────────────────────────────────────────────────────────
+
+// ── Listar reservas ────────────────────────────────────────────────────────
 
   Future<List<Reserva>> getReservas() async {
     final token = await _getToken();
@@ -53,7 +53,7 @@ class ReservaService {
     throw Exception(_extractErrorMessage(response));
   }
 
-  // ── Buscar reservas (filtro en cliente) ────────────────────────────────────
+// ── Buscar reservas (filtro en cliente) ────────────────────────────────────
 
   Future<List<Reserva>> buscarReservas(String query) async {
     final reservas = await getReservas();
@@ -64,7 +64,7 @@ class ReservaService {
         .toList();
   }
 
-  // ── Detalle de reserva ─────────────────────────────────────────────────────
+// ── Detalle de reserva ─────────────────────────────────────────────────────
 
   Future<Reserva> getReservaById(int id) async {
     final token = await _getToken();

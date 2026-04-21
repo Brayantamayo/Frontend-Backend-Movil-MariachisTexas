@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../core/format/currency.dart';
 import '../core/theme/app_colors.dart';
-import 'cotizacion.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import 'cotizacion_controller.dart';
 
 class CotizacionDetalleScreen extends StatefulWidget {
@@ -164,10 +163,10 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: _getEstadoColor(c.estado).withOpacity(0.1),
+                    color: _getEstadoColor(c.estado).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: _getEstadoColor(c.estado).withOpacity(0.3),
+                      color: _getEstadoColor(c.estado).withValues(alpha: 0.3),
                     ),
                   ),
                   child: Text(
@@ -376,8 +375,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                         width: 24,
                         height: 24,
                         decoration: BoxDecoration(
-                          color:
-                              (AppColors.primary).withOpacity(0.1),
+                          color: AppColors.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         alignment: Alignment.center,
@@ -450,10 +448,11 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: (AppColors.primary).withOpacity(0.05),
+                color: AppColors.primary.withValues(alpha: 0.05),
+                
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: (AppColors.primary).withOpacity(0.2),
+                  color: AppColors.primary.withValues(alpha: 0.2),
                 ),
               ),
               child: Column(

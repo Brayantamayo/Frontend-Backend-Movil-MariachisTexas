@@ -17,11 +17,11 @@ class AuthUser {
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
-    id:     json['id']    as int,
-    nombre: json['nombre'] as String,
-    email:  json['email']  as String,
-    rolId:  json['rolId']  as int,
-  );
+  id:     json['id']     as int,
+  nombre: json['nombre'] as String,
+  email:  json['email']  as String,
+  rolId:  json['rolId'] != null ? json['rolId'] as int : 0, // seguro
+);
 
   bool get isAdmin => rolId == 1;
 }
@@ -55,7 +55,7 @@ class AuthController extends ChangeNotifier {
     try {
       final result = await _service.login(email: email, password: password);
       _token = result['token'] as String;
-      _user  = AuthUser.fromJson(result['user'] as Map<String, dynamic>);
+      _user = AuthUser.fromJson(result['usuario'] as Map<String, dynamic>);
       _isAuthenticated = true;
       notifyListeners();
       return true;

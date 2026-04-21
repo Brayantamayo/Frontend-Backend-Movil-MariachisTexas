@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/config/network_config.dart';
-import 'cancion.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 
 class RepertorioService {
   static const _storage = FlutterSecureStorage();

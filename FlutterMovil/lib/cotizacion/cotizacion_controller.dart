@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'cotizacion.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import 'cotizacion_service.dart';
 
 enum CotizacionStatus { inicial, cargando, listo, error }

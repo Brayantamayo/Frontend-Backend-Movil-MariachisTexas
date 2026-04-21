@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mariachi_admin/auth/auth_controller.dart';
 import 'package:mariachi_admin/clientes/clientes_controller.dart';
-import 'package:mariachi_admin/clientes/cliente_model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import '../core/theme/app_colors.dart';
 
 class ClientesScreen extends StatefulWidget {
@@ -17,12 +17,11 @@ class _ClientesScreenState extends State<ClientesScreen> {
 
   @override
   void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final token = context.read<AuthController>().token ?? '';
-      context.read<ClientesController>().cargarClientes(token);
-    });
-  }
+  super.initState();
+WidgetsBinding.instance.addPostFrameCallback((_) {
+  context.read<ClientesController>().cargarClientes();
+});
+}
 
   @override
   void dispose() {
@@ -30,14 +29,14 @@ class _ClientesScreenState extends State<ClientesScreen> {
     super.dispose();
   }
 
-  List<Cliente> _filtered(List<Cliente> clientes) {
-    final q = _search.text.trim().toLowerCase();
-    if (q.isEmpty) return clientes;
-    return clientes.where((c) {
-      return c.nombre.toLowerCase().contains(q) ||
-          c.telefono.toLowerCase().contains(q);
-    }).toList();
-  }
+List<Cliente> _filtered(List<Cliente> clientes) {
+  final q = _search.text.trim().toLowerCase();
+  if (q.isEmpty) return clientes;
+  return clientes.where((c) {
+    return c.nombreCompleto.toLowerCase().contains(q) ||
+        (c.telefonoPrincipal ?? '').toLowerCase().contains(q);
+  }).toList();
+}
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +116,7 @@ class _ClienteCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    c.nombre,
+                    c.nombreCompleto,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w900, color: (AppColors.text)),
                   ),
@@ -126,7 +125,7 @@ class _ClienteCard extends StatelessWidget {
                     children: [
                       const Icon(Icons.phone, size: 14, color: (AppColors.textMuted)),
                       const SizedBox(width: 6),
-                      Text(c.telefono, style: const TextStyle(color: (AppColors.textMuted))),
+                      Text(c.telefonoPrincipal ?? 'Sin teléfono', style: const TextStyle(color: (AppColors.textMuted))),
                     ],
                   ),
                   const SizedBox(height: 2),
@@ -134,7 +133,7 @@ class _ClienteCard extends StatelessWidget {
                     children: [
                       const Icon(Icons.email, size: 14, color: (AppColors.textMuted)),
                       const SizedBox(width: 6),
-                      Text(c.email, style: const TextStyle(color: (AppColors.textMuted), fontSize: 12)),
+                      Text(c.email ?? 'Sin email', style: const TextStyle(color: (AppColors.textMuted), fontSize: 12)),
                     ],
                   ),
                 ],

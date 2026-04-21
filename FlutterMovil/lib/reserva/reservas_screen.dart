@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/format/currency.dart';
 import '../core/theme/app_colors.dart';
-import 'reserva.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import 'reserva_controller.dart';
 
 class ReservasScreen extends StatefulWidget {
@@ -370,7 +370,7 @@ class _ReservaCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          _getTipoEvento(cotizacion.tipoEvento),
+                          cotizacion.tipoEventoLabel,
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
                             color: (AppColors.text),
@@ -503,7 +503,7 @@ class _ReservaCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    cotizacion.cliente!.email,
+                    cotizacion.cliente!.email ?? '',
                     style: const TextStyle(
                       fontSize: 12,
                       color: (AppColors.textMuted),
@@ -511,7 +511,7 @@ class _ReservaCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    cotizacion.cliente!.telefonoPrincipal,
+                    cotizacion.cliente!.telefonoPrincipal ?? '',
                     style: const TextStyle(
                       fontSize: 12,
                       color: (AppColors.textMuted),
@@ -595,7 +595,7 @@ class _DetalleReservaModal extends StatelessWidget {
               if (cotizacion != null) ...[
                 _buildSection('Información del Evento', [
                   _buildRow('Homenajeado', cotizacion.nombreHomenajeado),
-                  _buildRow('Tipo', cotizacion.tipoEvento),
+                  _buildRow('Tipo', cotizacion.tipoEventoLabel),
                   _buildRow(
                     'Fecha',
                     '${cotizacion.fechaEvento.day}/${cotizacion.fechaEvento.month}/${cotizacion.fechaEvento.year}',
@@ -618,25 +618,25 @@ class _DetalleReservaModal extends StatelessWidget {
                 if (cotizacion.cliente != null)
                   _buildSection('Información del Cliente', [
                     _buildRow('Nombre', cotizacion.cliente!.apellido),
-                    _buildRow('Email', cotizacion.cliente!.email),
-                    _buildRow(
-                        'Teléfono', cotizacion.cliente!.telefonoPrincipal),
+                    _buildRow('Email', cotizacion.cliente!.email ?? ''),
+                    _buildRow('Teléfono', cotizacion.cliente!.telefonoPrincipal ?? ''),
                   ]),
                 const SizedBox(height: 16),
                 if (cotizacion.repertorios.isNotEmpty)
                   _buildSection('Repertorio', [
                     ...cotizacion.repertorios.map((r) => _buildRow(
-                          r.titulo,
-                          '${r.artista} - ${r.genero}',
-                        )),
+                      r.repertorio.titulo,
+                      '${r.repertorio.artista} - ${r.repertorio.genero ?? ''}',
+                    )),
                   ]),
                 const SizedBox(height: 16),
                 if (cotizacion.servicios.isNotEmpty)
                   _buildSection('Servicios', [
+                    // DESPUÉS
                     ...cotizacion.servicios.map((s) => _buildRow(
-                          s.nombre,
-                          '${s.cantidad}x - ${formatCop(s.precio.round())}',
-                        )),
+                    s.servicio.nombre,
+                    '${s.cantidad}x - ${formatCop(s.servicio.precio.round())}',
+                  )),
                   ]),
               ],
               const SizedBox(height: 20),

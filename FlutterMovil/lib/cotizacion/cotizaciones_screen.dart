@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/format/currency.dart';
 import '../core/theme/app_colors.dart';
-import 'cotizacion.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import 'cotizacion_controller.dart';
 import 'cotizacion_detalle_screen.dart';
 

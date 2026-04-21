@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/app_colors.dart';
-import 'cancion.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import 'repertorio_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -296,8 +296,8 @@ class _MiniPlayer extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [(AppColors.primary), Color(0xFFE53E3E)],
+        gradient: LinearGradient(
+          colors: [AppColors.primary, const Color(0xFFE53E3E)],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
@@ -817,7 +817,7 @@ class _DetalleDialog extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [(AppColors.primary), Color(0xFFE53E3E)],
+            colors: [AppColors.primary, Color(0xFFE53E3E)],
           ),
         ),
         child: const Center(

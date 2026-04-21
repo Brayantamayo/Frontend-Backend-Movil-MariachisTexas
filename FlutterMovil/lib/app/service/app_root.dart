@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../app/service/app_controller.dart';
-import '../auth/auth_controller.dart';
-import '../core/theme/app_colors.dart';
-import '../auth/login_screen.dart';
-import 'screens/shell_screen.dart';
-import 'widgets/splash_screen.dart';
+import 'app_controller.dart';
+import '../../auth/auth_controller.dart';
+import '../../core/theme/app_colors.dart';
+import '../../auth/login_screen.dart';
+import '../../ui/screens/shell_screen.dart';
+import '../../ui/widgets/splash_screen.dart';
 
 class AppRoot extends StatelessWidget {
   const AppRoot({super.key});
