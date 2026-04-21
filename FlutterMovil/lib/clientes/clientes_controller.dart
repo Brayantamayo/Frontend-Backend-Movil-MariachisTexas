@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mariachi_admin/app/clientes/cliente_service.dart';
-import 'package:mariachi_admin/app/clientes/cliente_model.dart';
+import 'package:mariachi_admin/clientes/cliente_service.dart';
+import 'package:mariachi_admin/clientes/cliente_model.dart';
 
 class ClientesController extends ChangeNotifier {
   List<Cliente> clientes = [];

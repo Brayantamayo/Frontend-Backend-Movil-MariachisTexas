@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:mariachi_admin/app/app_controller.dart';
-import 'package:mariachi_admin/app/clientes/clientes_controller.dart';
+import 'package:mariachi_admin/clientes/clientes_controller.dart';
 import 'package:mariachi_admin/auth/auth_controller.dart';
 import 'package:mariachi_admin/cotizacion/cotizacion_controller.dart';
 import 'package:mariachi_admin/repertorio/repertorio_controller.dart';

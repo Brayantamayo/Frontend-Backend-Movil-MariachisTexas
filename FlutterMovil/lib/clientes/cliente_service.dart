@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:mariachi_admin/app/clientes/cliente_model.dart';
+import 'package:mariachi_admin/clientes/cliente_model.dart';
 
 class ClienteService {
   static const String baseUrl = 'http://localhost:3000/api';
