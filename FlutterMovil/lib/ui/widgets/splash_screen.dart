@@ -31,7 +31,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(AppColors.primary),
+      backgroundColor: (AppColors.primary),
       body: SafeArea(
         child: Center(
           child: AnimatedBuilder(
@@ -60,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen>
                       child: const Icon(
                         Icons.music_note,
                         size: 48,
-                        color: Color(AppColors.primary),
+                        color: (AppColors.primary),
                       ),
                     ),
                     const SizedBox(height: 20),

@@ -54,4 +54,17 @@ class Cancion {
         'portada': portada,
         'activa': activa,
       };
+    Cancion copyWith({bool? activa}) => Cancion(
+    id: id,
+    titulo: titulo,
+    artista: artista,
+    genero: genero,
+    categoria: categoria,
+    letra: letra,
+    audioUrl: audioUrl,
+    duracion: duracion,
+    dificultad: dificultad,
+    portada: portada,
+    activa: activa ?? this.activa,
+  );
 }

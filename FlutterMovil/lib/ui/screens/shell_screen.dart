@@ -75,7 +75,7 @@ class _ShellScreenState extends State<ShellScreen>
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
-    final primary = const Color(AppColors.primary);
+    final primary =AppColors.primary;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,

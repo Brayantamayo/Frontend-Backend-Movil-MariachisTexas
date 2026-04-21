@@ -11,92 +11,59 @@ class CotizacionController extends ChangeNotifier {
   String errorMsg = '';
 
   List<Cotizacion> _todas = [];
+  List<Cotizacion> _todasOriginales = [];
   List<Cotizacion> get cotizaciones => _todas;
 
   String _query = '';
   String get query => _query;
 
-  // ── Carga inicial ──────────────────────────────────────────────────────────
-
   Future<void> cargar() async {
-    print('🔍 CotizacionController: Iniciando carga de cotizaciones');
-
     status = CotizacionStatus.cargando;
     errorMsg = '';
     notifyListeners();
-
     try {
-      print('🔍 CotizacionController: Llamando al servicio...');
       _todas = await _service.getCotizaciones();
-      print(
-          '✅ CotizacionController: Cotizaciones cargadas exitosamente: ${_todas.length}');
+      _todasOriginales = List.from(_todas);
       status = CotizacionStatus.listo;
     } catch (e) {
-      print('❌ CotizacionController: Error al cargar cotizaciones: $e');
       errorMsg = e.toString().replaceFirst('Exception: ', '');
       status = CotizacionStatus.error;
     }
-
     notifyListeners();
-    print('🔍 CotizacionController: Estado final: $status');
   }
 
-  // ── Búsqueda ───────────────────────────────────────────────────────────────
-
-  Future<void> buscar(String q) async {
+/// Buscar cotizaciones
+  void buscar(String q) {
     _query = q;
-    notifyListeners();
-
     if (q.trim().isEmpty) {
-      await cargar();
-      return;
+      _todas = List.from(_todasOriginales);
+    } else {
+      final lower = q.toLowerCase();
+      _todas = _todasOriginales.where((c) =>
+        c.clienteNombre.toLowerCase().contains(lower) ||
+        c.nombreHomenajeado.toLowerCase().contains(lower) ||
+        c.tipoEventoLabel.toLowerCase().contains(lower) ||
+        c.estadoLabel.toLowerCase().contains(lower),
+      ).toList();
     }
-
-    status = CotizacionStatus.cargando;
-    notifyListeners();
-
-    try {
-      _todas = await _service.buscarCotizaciones(q);
-      status = CotizacionStatus.listo;
-    } catch (e) {
-      errorMsg = e.toString().replaceFirst('Exception: ', '');
-      status = CotizacionStatus.error;
-    }
-
     notifyListeners();
   }
 
-  // ── Obtener detalle ────────────────────────────────────────────────────────
-
+/// Obtener detalle de una cotización
   Future<Cotizacion?> getDetalle(int id) async {
-    print('🔍 CotizacionController: Obteniendo detalle de cotización $id');
-
     try {
-      final cotizacion = await _service.getCotizacionById(id);
-      print(
-          '✅ CotizacionController: Detalle obtenido exitosamente - Estado: ${cotizacion.estado}');
-      return cotizacion;
+      return await _service.getCotizacionById(id);
     } catch (e) {
-      print('❌ CotizacionController: Error al obtener detalle: $e');
       errorMsg = e.toString().replaceFirst('Exception: ', '');
       notifyListeners();
       return null;
     }
   }
-
-  // ── Convertir a reserva ────────────────────────────────────────────────────
-
+/// Convertir a reserva
   Future<bool> convertirAReserva(int id) async {
     try {
       await _service.convertirAReserva(id);
-
-      // Actualizar estado local
-      final idx = _todas.indexWhere((c) => c.id == id);
-      if (idx != -1) {
-        _todas[idx].estado = EstadoCotizacion.convertida;
-        notifyListeners();
-      }
-
+      _actualizarEstado(id, EstadoCotizacion.convertida);
       return true;
     } catch (e) {
       errorMsg = e.toString().replaceFirst('Exception: ', '');
@@ -105,48 +72,26 @@ class CotizacionController extends ChangeNotifier {
     }
   }
 
-  // ── Anular cotización ──────────────────────────────────────────────────────
-
+/// Anular cotización
   Future<bool> anular(int id) async {
-    print('🔍 CotizacionController: Iniciando anulación de cotización $id');
-
     try {
       await _service.anularCotizacion(id);
-      print('✅ CotizacionController: Servicio completado');
-
-      // Actualizar estado local
-      final idx = _todas.indexWhere((c) => c.id == id);
-      print('🔍 CotizacionController: Índice encontrado: $idx');
-
-      if (idx != -1) {
-        print(
-            '🔍 CotizacionController: Estado anterior: ${_todas[idx].estado}');
-        _todas[idx].estado = EstadoCotizacion.anulada;
-        print(
-            '🔍 CotizacionController: Estado actualizado: ${_todas[idx].estado}');
-        notifyListeners();
-      }
-
-      print('✅ CotizacionController: Anulación completada exitosamente');
+      _actualizarEstado(id, EstadoCotizacion.anulada);
       return true;
     } catch (e) {
-      print('❌ CotizacionController: Error al anular: $e');
       errorMsg = e.toString().replaceFirst('Exception: ', '');
       notifyListeners();
       return false;
     }
   }
 
-  // ── Eliminar cotización ────────────────────────────────────────────────────
-
+/// Eliminar cotización
   Future<bool> eliminar(int id) async {
     try {
       await _service.eliminarCotizacion(id);
-
-      // Remover de la lista local
       _todas.removeWhere((c) => c.id == id);
+      _todasOriginales.removeWhere((c) => c.id == id);
       notifyListeners();
-
       return true;
     } catch (e) {
       errorMsg = e.toString().replaceFirst('Exception: ', '');
@@ -155,8 +100,7 @@ class CotizacionController extends ChangeNotifier {
     }
   }
 
-  // ── Generar PDF ────────────────────────────────────────────────────────────
-
+/// Descargar PDF de la cotización
   Future<bool> descargarPDF(int id) async {
     try {
       await _service.descargarPDF(id);
@@ -167,11 +111,17 @@ class CotizacionController extends ChangeNotifier {
       return false;
     }
   }
-
-  // ── Limpiar error ──────────────────────────────────────────────────────────
-
   void limpiarError() {
     errorMsg = '';
+    notifyListeners();
+  }
+
+  // ── Helper interno ────────────────────────────────────────────────────────
+  void _actualizarEstado(int id, EstadoCotizacion nuevoEstado) {
+    final idx = _todas.indexWhere((c) => c.id == id);
+    if (idx != -1) _todas[idx] = _todas[idx].copyWith(estado: nuevoEstado);
+    final idx2 = _todasOriginales.indexWhere((c) => c.id == id);
+    if (idx2 != -1) _todasOriginales[idx2] = _todasOriginales[idx2].copyWith(estado: nuevoEstado);
     notifyListeners();
   }
 }

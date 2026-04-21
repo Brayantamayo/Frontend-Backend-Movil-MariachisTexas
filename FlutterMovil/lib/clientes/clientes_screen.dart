@@ -51,7 +51,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
         children: [
           const Text(
             'Clientes',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(AppColors.text)),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: (AppColors.text)),
           ),
           const SizedBox(height: 14),
           TextField(
@@ -109,7 +109,7 @@ class _ClienteCard extends StatelessWidget {
                 color: Color(0xFFFEF2F2),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.person, color: Color(AppColors.primary)),
+              child: const Icon(Icons.person, color: (AppColors.primary)),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -119,22 +119,22 @@ class _ClienteCard extends StatelessWidget {
                   Text(
                     c.nombre,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w900, color: Color(AppColors.text)),
+                    style: const TextStyle(fontWeight: FontWeight.w900, color: (AppColors.text)),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.phone, size: 14, color: Color(AppColors.textMuted)),
+                      const Icon(Icons.phone, size: 14, color: (AppColors.textMuted)),
                       const SizedBox(width: 6),
-                      Text(c.telefono, style: const TextStyle(color: Color(AppColors.textMuted))),
+                      Text(c.telefono, style: const TextStyle(color: (AppColors.textMuted))),
                     ],
                   ),
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      const Icon(Icons.email, size: 14, color: Color(AppColors.textMuted)),
+                      const Icon(Icons.email, size: 14, color: (AppColors.textMuted)),
                       const SizedBox(width: 6),
-                      Text(c.email, style: const TextStyle(color: Color(AppColors.textMuted), fontSize: 12)),
+                      Text(c.email, style: const TextStyle(color: (AppColors.textMuted), fontSize: 12)),
                     ],
                   ),
                 ],

@@ -280,6 +280,30 @@ class Cotizacion {
     this.reserva,
   });
 
+  Cotizacion copyWith({EstadoCotizacion? estado}) => Cotizacion(
+  id: id,
+  clienteId: clienteId,
+  nombreHomenajeado: nombreHomenajeado,
+  tipoEvento: tipoEvento,
+  fechaEvento: fechaEvento,
+  horaInicio: horaInicio,
+  horaFin: horaFin,
+  direccionEvento: direccionEvento,
+  notasAdicionales: notasAdicionales,
+  totalEstimado: totalEstimado,
+  esReservaDirecta: esReservaDirecta,
+  estado: estado ?? this.estado,
+  createdAt: createdAt,
+  contactoEmail: contactoEmail,
+  contactoNombre: contactoNombre,
+  contactoTelefono: contactoTelefono,
+  contactoTelefono2: contactoTelefono2,
+  cliente: cliente,
+  servicios: servicios,
+  repertorios: repertorios,
+  reserva: reserva,
+);
+
   factory Cotizacion.fromJson(Map<String, dynamic> json) {
     try {
       print('🔍 Cotizacion.fromJson: Iniciando parseo de JSON');
@@ -418,3 +442,4 @@ String _tipoEventoToLabel(TipoEvento tipo) {
     TipoEvento.otro => 'Otro',
   };
 }
+

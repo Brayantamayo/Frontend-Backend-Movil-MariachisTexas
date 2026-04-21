@@ -5,150 +5,128 @@ import 'reserva.model.dart';
 import '../core/config/network_config.dart';
 
 class ReservaService {
-  // ── Token ────────────────────────────────────────────────────────────────────
+  // ── Token ─────────────────────────────────────────────────────────────────
 
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    print(
-        '🔍 ReservaService: Retrieved token: ${token?.substring(0, 20) ?? 'null'}...');
-    return token;
+    return prefs.getString('token');
   }
 
-  // ── Obtener todas las reservas ─────────────────────────────────────────────
+  // ── Utilidades privadas ────────────────────────────────────────────────────
+
+  String _resolveBaseUrl() => NetworkConfig.baseUrl;
+
+  Map<String, String> _buildHeaders(String token) =>
+      NetworkConfig.authHeaders(token);
+
+  String _extractErrorMessage(http.Response response) {
+    if (response.body.trim().startsWith('<')) {
+      return 'El servidor devolvió una respuesta inesperada (${response.statusCode})';
+    }
+    try {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return body['message']?.toString() ?? 'Error ${response.statusCode}';
+    } catch (_) {
+      return 'Respuesta inválida del servidor (${response.statusCode})';
+    }
+  }
+
+  // ── Listar reservas ────────────────────────────────────────────────────────
 
   Future<List<Reserva>> getReservas() async {
-    print('🔍 ReservaService: Iniciando getReservas()');
-
-    final token = await _getToken();
-    if (token == null) {
-      print('❌ ReservaService: No hay token, usuario no autenticado');
-      throw Exception('No autenticado');
-    }
-
-    // Intentar encontrar una URL que funcione
-    String? workingUrl = await NetworkConfig.findWorkingUrl();
-    if (workingUrl == null) {
-      throw Exception(
-          'No se puede conectar al servidor. Verifica que esté corriendo en localhost:3000');
-    }
-
-    final uri = Uri.parse('$workingUrl/api/reservas');
-    print('🔍 ReservaService: Haciendo petición a: $uri');
-
-    try {
-      final response = await http
-          .get(uri, headers: NetworkConfig.authHeaders(token))
-          .timeout(NetworkConfig.timeout);
-
-      print(
-          '🔍 ReservaService: Respuesta recibida - Status: ${response.statusCode}');
-      print(
-          '🔍 ReservaService: Content-Type: ${response.headers['content-type']}');
-      print('🔍 ReservaService: Body length: ${response.body.length}');
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        print(
-            '✅ ReservaService: JSON parseado exitosamente - ${data.length} reservas');
-
-        final reservas = data
-            .map((e) => Reserva.fromJson(e as Map<String, dynamic>))
-            .toList();
-
-        print(
-            '✅ ReservaService: Modelos creados exitosamente - ${reservas.length} reservas');
-        return reservas;
-      } else {
-        print('❌ ReservaService: Error HTTP ${response.statusCode}');
-        print(
-            '❌ ReservaService: Response body preview: ${response.body.substring(0, response.body.length > 500 ? 500 : response.body.length)}');
-
-        // Si la respuesta parece HTML, no intentar parsear como JSON
-        if (response.body.trim().startsWith('<!DOCTYPE') ||
-            response.body.trim().startsWith('<html')) {
-          throw Exception(
-              'El servidor devolvió HTML en lugar de JSON. Verifica que el backend esté corriendo correctamente en localhost:3000');
-        }
-
-        try {
-          final body = jsonDecode(response.body) as Map<String, dynamic>;
-          throw Exception(body['message'] ?? 'Error al cargar reservas');
-        } catch (e) {
-          throw Exception(
-              'Respuesta inválida del servidor: ${response.statusCode}');
-        }
-      }
-    } catch (e) {
-      print('❌ ReservaService: Exception caught: $e');
-      rethrow;
-    }
-  }
-
-  // ── Buscar reservas ────────────────────────────────────────────────────────
-
-  Future<List<Reserva>> buscarReservas(String query) async {
-    // Por ahora, obtener todas y filtrar en el cliente
-    final reservas = await getReservas();
-    return reservas
-        .where((r) =>
-            r.cotizacion?.nombreHomenajeado
-                .toLowerCase()
-                .contains(query.toLowerCase()) ??
-            false)
-        .toList();
-  }
-
-  // ── Obtener detalle de reserva ─────────────────────────────────────────────
-
-  Future<Reserva> getReservaById(int id) async {
-    print('🔍 ReservaService: Obteniendo detalle de reserva $id');
-
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    String? workingUrl = await NetworkConfig.findWorkingUrl();
-    if (workingUrl == null) {
-      throw Exception('No se puede conectar al servidor');
+    final uri = Uri.parse('${_resolveBaseUrl()}/api/reservas');
+
+    final response = await http
+        .get(uri, headers: _buildHeaders(token))
+        .timeout(NetworkConfig.timeout);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List<dynamic>;
+      return data
+          .map((e) => Reserva.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
 
-    final uri = Uri.parse('$workingUrl/api/reservas/$id');
-    print('🔍 ReservaService: Haciendo petición GET a: $uri');
+    throw Exception(_extractErrorMessage(response));
+  }
 
-    try {
-      final response = await http
-          .get(uri, headers: NetworkConfig.authHeaders(token))
-          .timeout(NetworkConfig.timeout);
+  // ── Buscar reservas (filtro en cliente) ────────────────────────────────────
 
-      print(
-          '🔍 ReservaService: Respuesta detalle - Status: ${response.statusCode}');
+  Future<List<Reserva>> buscarReservas(String query) async {
+    final reservas = await getReservas();
+    final q = query.toLowerCase().trim();
+    return reservas
+        .where((r) =>
+            r.cotizacion?.nombreHomenajeado.toLowerCase().contains(q) ?? false)
+        .toList();
+  }
 
-      if (response.statusCode == 200) {
-        final reserva =
-            Reserva.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
-        print('✅ ReservaService: Detalle obtenido exitosamente');
-        return reserva;
-      } else {
-        print(
-            '❌ ReservaService: Error al obtener detalle - Status: ${response.statusCode}');
+  // ── Detalle de reserva ─────────────────────────────────────────────────────
 
-        if (response.body.trim().startsWith('<!DOCTYPE') ||
-            response.body.trim().startsWith('<html')) {
-          throw Exception(
-              'El servidor devolvió HTML en lugar de JSON. Status: ${response.statusCode}');
-        }
+  Future<Reserva> getReservaById(int id) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('No autenticado');
 
-        try {
-          final body = jsonDecode(response.body) as Map<String, dynamic>;
-          throw Exception(body['message'] ?? 'Error al cargar detalle');
-        } catch (e) {
-          throw Exception(
-              'Respuesta inválida del servidor: ${response.statusCode}');
-        }
-      }
-    } catch (e) {
-      print('❌ ReservaService: Exception al obtener detalle: $e');
-      rethrow;
+  final uri = Uri.parse('${_resolveBaseUrl()}/api/reservas/$id');
+
+    final response = await http
+        .get(uri, headers: _buildHeaders(token))
+        .timeout(NetworkConfig.timeout);
+
+    if (response.statusCode == 200) {
+      return Reserva.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    }
+
+    throw Exception(_extractErrorMessage(response));
+  }
+
+  // ── Registrar abono ────────────────────────────────────────────────────────
+
+  Future<Abono> registrarAbono(
+    int reservaId, {
+    required double monto,
+    required String metodoPago,
+    String? notas,
+  }) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('No autenticado');
+
+  final uri = Uri.parse('${_resolveBaseUrl()}/api/reservas/$reservaId/abonos');
+
+    final body = jsonEncode({
+      'monto': monto,
+      'metodoPago': metodoPago,
+      if (notas != null && notas.isNotEmpty) 'notas': notas,
+    });
+
+    final response = await http
+        .post(uri, headers: _buildHeaders(token), body: body)
+        .timeout(NetworkConfig.timeout);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return Abono.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    }
+
+    throw Exception(_extractErrorMessage(response));
+  }
+
+  // ── Anular reserva ─────────────────────────────────────────────────────────
+
+  Future<void> anularReserva(int id) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('No autenticado');
+
+  final uri = Uri.parse('${_resolveBaseUrl()}/api/reservas/$id/anular');
+
+    final response = await http
+        .patch(uri, headers: _buildHeaders(token))
+        .timeout(NetworkConfig.timeout);
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception(_extractErrorMessage(response));
     }
   }
 }

@@ -84,7 +84,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
           ),
           FilledButton(
             onPressed: () {
-              // TODO: Implementar lógica de abono
+              //TODO: Implementar lógica de abono
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Abono registrado')),
@@ -112,7 +112,6 @@ class _ReservasScreenState extends State<ReservasScreen> {
           ),
           FilledButton(
             onPressed: () {
-              // TODO: Implementar lógica de anulación
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Reserva anulada')),
@@ -143,7 +142,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
-                    color: Color(AppColors.text),
+                    color: (AppColors.text),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -300,7 +299,7 @@ class _ReservaCard extends StatelessWidget {
                           Text(
                             '#${reserva.id}',
                             style: const TextStyle(
-                              color: Color(AppColors.textMuted),
+                              color: (AppColors.textMuted),
                               fontWeight: FontWeight.w800,
                               fontSize: 12,
                             ),
@@ -312,7 +311,7 @@ class _ReservaCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
-                                color: Color(AppColors.text),
+                                color: (AppColors.text),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -324,7 +323,7 @@ class _ReservaCard extends StatelessWidget {
                       Text(
                         'Cotización #${reserva.cotizacionId}',
                         style: const TextStyle(
-                          color: Color(AppColors.textMuted),
+                          color: (AppColors.textMuted),
                           fontSize: 12,
                         ),
                       ),
@@ -365,7 +364,7 @@ class _ReservaCard extends StatelessWidget {
                           'Tipo de Evento',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Color(AppColors.textMuted),
+                            color: (AppColors.textMuted),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -374,7 +373,7 @@ class _ReservaCard extends StatelessWidget {
                           _getTipoEvento(cotizacion.tipoEvento),
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Color(AppColors.text),
+                            color: (AppColors.text),
                             fontSize: 13,
                           ),
                         ),
@@ -389,7 +388,7 @@ class _ReservaCard extends StatelessWidget {
                           'Fecha del Evento',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Color(AppColors.textMuted),
+                            color: (AppColors.textMuted),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -398,7 +397,7 @@ class _ReservaCard extends StatelessWidget {
                           '${cotizacion.fechaEvento.day}/${cotizacion.fechaEvento.month}/${cotizacion.fechaEvento.year}',
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Color(AppColors.text),
+                            color: (AppColors.text),
                             fontSize: 13,
                           ),
                         ),
@@ -412,7 +411,7 @@ class _ReservaCard extends StatelessWidget {
                 'Ubicación: ${cotizacion.direccionEvento}',
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(AppColors.textMuted),
+                  color: (AppColors.textMuted),
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -433,7 +432,7 @@ class _ReservaCard extends StatelessWidget {
                         'Valor Total',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(AppColors.textMuted),
+                          color: (AppColors.textMuted),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -444,7 +443,7 @@ class _ReservaCard extends StatelessWidget {
                             : 'No especificado',
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
-                          color: Color(AppColors.text),
+                          color: (AppColors.text),
                         ),
                       ),
                     ],
@@ -458,7 +457,7 @@ class _ReservaCard extends StatelessWidget {
                         'Saldo Pendiente',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(AppColors.textMuted),
+                          color: (AppColors.textMuted),
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -490,7 +489,7 @@ class _ReservaCard extends StatelessWidget {
                     'Cliente',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Color(AppColors.textMuted),
+                      color: (AppColors.textMuted),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -499,7 +498,7 @@ class _ReservaCard extends StatelessWidget {
                     cotizacion!.cliente!.apellido,
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Color(AppColors.text),
+                      color: (AppColors.text),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -507,7 +506,7 @@ class _ReservaCard extends StatelessWidget {
                     cotizacion.cliente!.email,
                     style: const TextStyle(
                       fontSize: 12,
-                      color: Color(AppColors.textMuted),
+                      color: (AppColors.textMuted),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -515,7 +514,7 @@ class _ReservaCard extends StatelessWidget {
                     cotizacion.cliente!.telefonoPrincipal,
                     style: const TextStyle(
                       fontSize: 12,
-                      color: Color(AppColors.textMuted),
+                      color: (AppColors.textMuted),
                     ),
                   ),
                 ],
@@ -657,7 +656,7 @@ class _DetalleReservaModal extends StatelessWidget {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Color(AppColors.textMuted),
+            color: (AppColors.textMuted),
           ),
         ),
         const SizedBox(height: 8),
@@ -676,7 +675,7 @@ class _DetalleReservaModal extends StatelessWidget {
             label,
             style: const TextStyle(
               fontSize: 13,
-              color: Color(AppColors.textMuted),
+              color: (AppColors.textMuted),
             ),
           ),
           Expanded(
@@ -686,7 +685,7 @@ class _DetalleReservaModal extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(AppColors.text),
+                color: (AppColors.text),
               ),
             ),
           ),

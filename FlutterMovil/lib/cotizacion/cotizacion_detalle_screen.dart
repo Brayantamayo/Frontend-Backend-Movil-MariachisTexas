@@ -59,7 +59,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
         title: Text(_cotizacion != null
             ? 'Cotización #${_cotizacion!.id}'
             : 'Detalle de Cotización'),
-        backgroundColor: const Color(AppColors.primary),
+        backgroundColor: (AppColors.primary),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -146,7 +146,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
-                          color: Color(AppColors.text),
+                          color: (AppColors.text),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -154,7 +154,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                         'Para: ${c.nombreHomenajeado}',
                         style: const TextStyle(
                           fontSize: 16,
-                          color: Color(AppColors.textMuted),
+                          color: (AppColors.textMuted),
                         ),
                       ),
                     ],
@@ -212,7 +212,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: Color(AppColors.text),
+                color: (AppColors.text),
               ),
             ),
             const SizedBox(height: 12),
@@ -250,7 +250,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: Color(AppColors.text),
+                color: (AppColors.text),
               ),
             ),
             const SizedBox(height: 12),
@@ -288,7 +288,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: Color(AppColors.text),
+                color: (AppColors.text),
               ),
             ),
             const SizedBox(height: 12),
@@ -312,7 +312,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                               Text(
                                 servicio.servicio.descripcion!,
                                 style: const TextStyle(
-                                  color: Color(AppColors.textMuted),
+                                  color: (AppColors.textMuted),
                                   fontSize: 14,
                                 ),
                               ),
@@ -327,7 +327,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                             'Cant: ${servicio.cantidad}',
                             style: const TextStyle(
                               fontSize: 12,
-                              color: Color(AppColors.textMuted),
+                              color: (AppColors.textMuted),
                             ),
                           ),
                           Text(
@@ -335,7 +335,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 16,
-                              color: Color(AppColors.primary),
+                              color: (AppColors.primary),
                             ),
                           ),
                         ],
@@ -364,7 +364,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: Color(AppColors.text),
+                color: (AppColors.text),
               ),
             ),
             const SizedBox(height: 12),
@@ -377,7 +377,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                         height: 24,
                         decoration: BoxDecoration(
                           color:
-                              const Color(AppColors.primary).withOpacity(0.1),
+                              (AppColors.primary).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         alignment: Alignment.center,
@@ -386,7 +386,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: Color(AppColors.primary),
+                            color: (AppColors.primary),
                           ),
                         ),
                       ),
@@ -405,7 +405,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                             Text(
                               item.repertorio.artista,
                               style: const TextStyle(
-                                color: Color(AppColors.textMuted),
+                                color: (AppColors.textMuted),
                                 fontSize: 13,
                               ),
                             ),
@@ -416,7 +416,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                         Text(
                           item.repertorio.duracion!,
                           style: const TextStyle(
-                            color: Color(AppColors.textMuted),
+                            color: (AppColors.textMuted),
                             fontSize: 12,
                           ),
                         ),
@@ -442,7 +442,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: Color(AppColors.text),
+                color: (AppColors.text),
               ),
             ),
             const SizedBox(height: 16),
@@ -450,10 +450,10 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(AppColors.primary).withOpacity(0.05),
+                color: (AppColors.primary).withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(AppColors.primary).withOpacity(0.2),
+                  color: (AppColors.primary).withOpacity(0.2),
                 ),
               ),
               child: Column(
@@ -463,7 +463,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: Color(AppColors.textMuted),
+                      color: (AppColors.textMuted),
                       letterSpacing: 1,
                     ),
                   ),
@@ -475,7 +475,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
-                      color: Color(AppColors.primary),
+                      color: (AppColors.primary),
                     ),
                   ),
                 ],
@@ -499,7 +499,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               children: [
                 const Icon(
                   Icons.bookmark_added,
-                  color: Color(AppColors.primary),
+                  color:(AppColors.primary),
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -508,7 +508,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: Color(AppColors.text),
+                    color:(AppColors.text),
                   ),
                 ),
               ],
@@ -536,13 +536,13 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
   Widget _infoRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: const Color(AppColors.textMuted)),
+        Icon(icon, size: 18, color: (AppColors.textMuted)),
         const SizedBox(width: 8),
         Text(
           '$label: ',
           style: const TextStyle(
             fontWeight: FontWeight.w600,
-            color: Color(AppColors.textMuted),
+            color: (AppColors.textMuted),
           ),
         ),
         Expanded(
@@ -550,7 +550,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
             value,
             style: const TextStyle(
               fontWeight: FontWeight.w600,
-              color: Color(AppColors.text),
+              color: (AppColors.text),
             ),
           ),
         ),
@@ -567,7 +567,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: Color(AppColors.textMuted),
+            color: (AppColors.textMuted),
             letterSpacing: 0.5,
           ),
         ),
@@ -577,7 +577,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: Color(AppColors.text),
+            color: (AppColors.text),
           ),
         ),
       ],
