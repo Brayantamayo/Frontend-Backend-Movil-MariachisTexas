@@ -156,10 +156,10 @@ class Repertorio {
   factory Repertorio.fromJson(Map<String, dynamic> j) => Repertorio(
     id:         _parseInt(j['id']),
     titulo:     j['titulo'] as String,
-    artista:    j['artista'] as String,
-    genero:     j['genero'] as String,
-    categoria:  j['categoria'] as String,
-    duracion:   j['duracion'] as String,
+    artista:    j['artista'] as String? ?? '',
+    genero:     j['genero'] as String? ?? '',
+    categoria:  j['categoria'] as String? ?? '',
+    duracion:   j['duracion'] as String? ?? '',
     dificultad: j['dificultad'] as String? ?? '',
     portada:    j['portada'] as String?,
     audioUrl:   j['audioUrl'] as String?,
@@ -504,18 +504,18 @@ class Cancion {
   });
 
   factory Cancion.fromJson(Map<String, dynamic> j) => Cancion(
-    id:         _parseInt(j['id']),
-    titulo:     j['titulo'] as String,
-    artista:    j['artista'] as String,
-    genero:     j['genero'] as String,
-    categoria:  j['categoria'] as String,
-    duracion:   j['duracion'] as String,
-    dificultad: j['dificultad'] as String? ?? '',
-    portada:    j['portada'] as String?,
-    audioUrl:   j['audioUrl'] as String?,
-    letra:      j['letra'] as String?,
-    activa:     j['activa'] as bool? ?? true,
-  );
+  id:         _parseInt(j['id']),
+  titulo:     (j['titulo'] ?? j['title'])    as String? ?? '',
+  artista:    (j['artista'] ?? j['artist'])  as String? ?? '',
+  genero:     (j['genero'] ?? j['genre'])    as String? ?? '',
+  categoria:  (j['categoria'] ?? j['category']) as String? ?? '',
+  duracion:   (j['duracion'] ?? j['duration'])  as String? ?? '',
+  dificultad: (j['dificultad'] ?? j['difficulty']) as String? ?? '',
+  portada:    (j['portada'] ?? j['coverImage']) as String?,
+  audioUrl:   j['audioUrl'] as String?,
+  letra:      (j['letra'] ?? j['lyrics'])   as String?,
+  activa:     (j['activa'] ?? j['isActive']) as bool? ?? true,
+);
 
   Cancion copyWith({bool? activa}) => Cancion(
     id: id, titulo: titulo, artista: artista, genero: genero,
