@@ -230,9 +230,15 @@ class Reserva {
   final String estado;
   final double totalValor;
   final double saldoPendiente;
-  final DateTime createdAt;
-  final DateTime? updatedAt;
-  final Cotizacion? cotizacion;
+  final String clienteNombre;
+  final String clienteEmail;
+  final String clienteTelefono;
+  final String homenajeado;
+  final String tipoEvento;
+  final DateTime fechaEvento;
+  final String horaInicio;
+  final String horaFin;
+  final String ubicacion;
   final List<Abono> abonos;
 
   const Reserva({
@@ -241,40 +247,48 @@ class Reserva {
     required this.estado,
     required this.totalValor,
     required this.saldoPendiente,
-    required this.createdAt,
-    this.updatedAt,
-    this.cotizacion,
+    required this.clienteNombre,
+    required this.clienteEmail,
+    required this.clienteTelefono,
+    required this.homenajeado,
+    required this.tipoEvento,
+    required this.fechaEvento,
+    required this.horaInicio,
+    required this.horaFin,
+    required this.ubicacion,
     this.abonos = const [],
   });
 
   factory Reserva.fromJson(Map<String, dynamic> j) => Reserva(
-    id:             _parseInt(j['id']),
-    cotizacionId:   _parseInt(j['cotizacionId']),
-    estado:         j['estado'] as String,
-    totalValor:     _parseDouble(j['totalValor']),
-    saldoPendiente: _parseDouble(j['saldoPendiente']),
-    createdAt:      DateTime.parse(j['createdAt'] as String),
-    updatedAt:      j['updatedAt'] != null
-        ? DateTime.parse(j['updatedAt'] as String)
-        : null,
-    cotizacion: j['cotizacion'] != null
-        ? Cotizacion.fromJson(j['cotizacion'] as Map<String, dynamic>)
-        : null,
-    abonos: (j['abonos'] as List<dynamic>?)
+    id:              _parseInt(j['id']),
+    cotizacionId:    _parseInt(j['cotizacionId']),
+    estado:          j['status'] as String? ?? 'PENDIENTE',
+    totalValor:      _parseDouble(j['totalAmount']),
+    saldoPendiente:  _parseDouble(j['pendingBalance']),
+    clienteNombre:   j['clientName']  as String? ?? '',
+    clienteEmail:    j['clientEmail'] as String? ?? '',
+    clienteTelefono: j['clientPhone'] as String? ?? '',
+    homenajeado:     j['homenajeado'] as String? ?? '',
+    tipoEvento:      j['eventType']   as String? ?? '',
+    fechaEvento:     DateTime.parse(j['eventDate'] as String),
+    horaInicio:      j['startTime']   as String? ?? '',
+    horaFin:         j['endTime']     as String? ?? '',
+    ubicacion:       j['location']    as String? ?? '',
+    abonos: (j['payments'] as List<dynamic>?)
             ?.map((e) => Abono.fromJson(e as Map<String, dynamic>))
-            .toList() ??
-        [],
+            .toList() ?? [],
   );
 
   EstadoReserva get estadoEnum => _estadoReservaFromString(estado);
+
   String get estadoLabel => _estadoReservaToLabel(estadoEnum);
-  
+
   String _estadoReservaToLabel(EstadoReserva e) => switch (e) {
-  EstadoReserva.pendiente   => 'Pendiente',
-  EstadoReserva.confirmada  => 'Confirmada',
-  EstadoReserva.anulada     => 'Anulada',
-  EstadoReserva.finalizado  => 'Finalizado',
-};
+    EstadoReserva.pendiente   => 'Pendiente',
+    EstadoReserva.confirmada  => 'Confirmada',
+    EstadoReserva.anulada     => 'Anulada',
+    EstadoReserva.finalizado  => 'Finalizado',
+  };
 }
 
 // ─── COTIZACIÓN ───────────────────────────────────────────────────────────────
@@ -282,22 +296,20 @@ class Reserva {
 class Cotizacion {
   final int id;
   final int? clienteId;
-  final String nombreHomenajeado;
+  final String clienteNombre;
+  final String clienteEmail;
+  final String clienteTelefono;
+  final String homenajeado;
   final TipoEvento tipoEvento;
   final DateTime fechaEvento;
-  final DateTime horaInicio;
-  final DateTime horaFin;
-  final String direccionEvento;
-  final String? notasAdicionales;
+  final String horaInicio;
+  final String horaFin;
+  final String ubicacion;
+  final String? notas;
   final double? totalEstimado;
   final bool esReservaDirecta;
   EstadoCotizacion estado;
   final DateTime createdAt;
-  final String? contactoEmail;
-  final String? contactoNombre;
-  final String? contactoTelefono;
-  final String? contactoTelefono2;
-  final Cliente? cliente;
   final List<CotizacionServicio> servicios;
   final List<CotizacionRepertorio> repertorios;
   final Reserva? reserva;
@@ -305,80 +317,71 @@ class Cotizacion {
   Cotizacion({
     required this.id,
     this.clienteId,
-    required this.nombreHomenajeado,
+    required this.clienteNombre,
+    required this.clienteEmail,
+    required this.clienteTelefono,
+    required this.homenajeado,
     required this.tipoEvento,
     required this.fechaEvento,
     required this.horaInicio,
     required this.horaFin,
-    required this.direccionEvento,
-    this.notasAdicionales,
+    required this.ubicacion,
+    this.notas,
     this.totalEstimado,
     required this.esReservaDirecta,
     required this.estado,
     required this.createdAt,
-    this.contactoEmail,
-    this.contactoNombre,
-    this.contactoTelefono,
-    this.contactoTelefono2,
-    this.cliente,
     this.servicios = const [],
     this.repertorios = const [],
     this.reserva,
   });
 
   factory Cotizacion.fromJson(Map<String, dynamic> j) => Cotizacion(
-    id:               _parseInt(j['id']),
-    clienteId:        _parseIntNull(j['clienteId']),
-    nombreHomenajeado: j['nombreHomenajeado'] as String,
-    tipoEvento:       _tipoEventoFromString(j['tipoEvento'] as String),
-    fechaEvento:      DateTime.parse(j['fechaEvento'] as String),
-    horaInicio:       DateTime.parse(j['horaInicio'] as String),
-    horaFin:          DateTime.parse(j['horaFin'] as String),
-    direccionEvento:  j['direccionEvento'] as String,
-    notasAdicionales: j['notasAdicionales'] as String?,
-    totalEstimado:    _parseDoubleNull(j['totalEstimado']),
-    esReservaDirecta: j['esReservaDirecta'] as bool? ?? false,
-    estado:           _estadoCotizacionFromString(j['estado'] as String),
-    createdAt:        DateTime.parse(j['createdAt'] as String),
-    contactoEmail:    j['contactoEmail'] as String?,
-    contactoNombre:   j['contactoNombre'] as String?,
-    contactoTelefono: j['contactoTelefono'] as String?,
-    contactoTelefono2: j['contactoTelefono2'] as String?,
-    cliente: j['cliente'] != null
-        ? Cliente.fromJson(j['cliente'] as Map<String, dynamic>)
-        : null,
-    servicios: (j['servicios'] as List<dynamic>?)
+    id:              _parseInt(j['id']),
+    clienteId:       _parseIntNull(j['clientId']),
+    clienteNombre:   j['clientName']  as String? ?? '',
+    clienteEmail:    j['clientEmail'] as String? ?? '',
+    clienteTelefono: j['clientPhone'] as String? ?? '',
+    homenajeado:     j['homenajeado'] as String? ?? '',
+    tipoEvento:      _tipoEventoFromString(j['eventType'] as String? ?? 'OTRO'),
+    fechaEvento:     DateTime.parse(j['eventDate'] as String),
+    horaInicio:      j['startTime']   as String? ?? '',
+    horaFin:         j['endTime']     as String? ?? '',
+    ubicacion:       j['location']    as String? ?? '',
+    notas:           j['notes']       as String?,
+    totalEstimado:   _parseDoubleNull(j['totalAmount']),
+    esReservaDirecta: j['isDirectReservation'] as bool? ?? false,
+    estado:          _estadoCotizacionFromString(j['status'] as String? ?? 'EN_ESPERA'),
+    createdAt:       DateTime.parse(j['createdAt'] as String),
+    servicios: (j['services'] as List<dynamic>?)
             ?.map((e) => CotizacionServicio.fromJson(e as Map<String, dynamic>))
             .toList() ?? [],
-    repertorios: (j['repertorios'] as List<dynamic>?)
+    repertorios: (j['repertoire'] as List<dynamic>?)
             ?.map((e) => CotizacionRepertorio.fromJson(e as Map<String, dynamic>))
             .toList() ?? [],
-    reserva: j['reserva'] != null
-        ? Reserva.fromJson(j['reserva'] as Map<String, dynamic>)
+    reserva: j['reservation'] != null
+        ? Reserva.fromJson(j['reservation'] as Map<String, dynamic>)
         : null,
   );
 
   Cotizacion copyWith({EstadoCotizacion? estado}) => Cotizacion(
-    id: id, clienteId: clienteId, nombreHomenajeado: nombreHomenajeado,
-    tipoEvento: tipoEvento, fechaEvento: fechaEvento, horaInicio: horaInicio,
-    horaFin: horaFin, direccionEvento: direccionEvento,
-    notasAdicionales: notasAdicionales, totalEstimado: totalEstimado,
+    id: id, clienteId: clienteId, clienteNombre: clienteNombre,
+    clienteEmail: clienteEmail, clienteTelefono: clienteTelefono,
+    homenajeado: homenajeado, tipoEvento: tipoEvento,
+    fechaEvento: fechaEvento, horaInicio: horaInicio, horaFin: horaFin,
+    ubicacion: ubicacion, notas: notas, totalEstimado: totalEstimado,
     esReservaDirecta: esReservaDirecta, estado: estado ?? this.estado,
-    createdAt: createdAt, contactoEmail: contactoEmail,
-    contactoNombre: contactoNombre, contactoTelefono: contactoTelefono,
-    contactoTelefono2: contactoTelefono2, cliente: cliente,
+    createdAt: createdAt,
     servicios: servicios, repertorios: repertorios, reserva: reserva,
   );
 
-  String get clienteNombre =>
-      cliente?.nombreCompleto ?? contactoNombre ?? 'Cliente no especificado';
-  String get tipoEventoLabel => _tipoEventoToLabel(tipoEvento);
-  String get estadoLabel     => _estadoCotizacionToLabel(estado);
-  bool get puedeConvertirse  =>
+  String get tipoEventoLabel  => _tipoEventoToLabel(tipoEvento);
+  String get estadoLabel      => _estadoCotizacionToLabel(estado);
+  bool get puedeConvertirse   =>
       estado == EstadoCotizacion.enEspera &&
       totalEstimado != null && totalEstimado! > 0;
-  bool get puedeAnularse   => estado == EstadoCotizacion.enEspera;
-  bool get puedeEliminarse => reserva == null;
+  bool get puedeAnularse  => estado == EstadoCotizacion.enEspera;
+  bool get puedeEliminarse => true;
 }
 
 // ─── ENSAYO ───────────────────────────────────────────────────────────────────
@@ -504,18 +507,18 @@ class Cancion {
   });
 
   factory Cancion.fromJson(Map<String, dynamic> j) => Cancion(
-  id:         _parseInt(j['id']),
-  titulo:     (j['titulo'] ?? j['title'])    as String? ?? '',
-  artista:    (j['artista'] ?? j['artist'])  as String? ?? '',
-  genero:     (j['genero'] ?? j['genre'])    as String? ?? '',
-  categoria:  (j['categoria'] ?? j['category']) as String? ?? '',
-  duracion:   (j['duracion'] ?? j['duration'])  as String? ?? '',
-  dificultad: (j['dificultad'] ?? j['difficulty']) as String? ?? '',
-  portada:    (j['portada'] ?? j['coverImage']) as String?,
-  audioUrl:   j['audioUrl'] as String?,
-  letra:      (j['letra'] ?? j['lyrics'])   as String?,
-  activa:     (j['activa'] ?? j['isActive']) as bool? ?? true,
-);
+    id:         _parseInt(j['id']),
+    titulo:     (j['titulo'] ?? j['title'])       as String? ?? '',
+    artista:    (j['artista'] ?? j['artist'])      as String? ?? '',
+    genero:     (j['genero'] ?? j['genre'])        as String? ?? '',
+    categoria:  (j['categoria'] ?? j['category'])  as String? ?? '',
+    duracion:   (j['duracion'] ?? j['duration'])   as String? ?? '',
+    dificultad: (j['dificultad'] ?? j['difficulty']) as String? ?? '',
+    portada:    (j['portada'] ?? j['coverImage'])  as String?,
+    audioUrl:   j['audioUrl']                      as String?,
+    letra:      (j['letra'] ?? j['lyrics'])        as String?,
+    activa:     (j['activa'] ?? j['isActive'])     as bool? ?? true,
+  );
 
   Cancion copyWith({bool? activa}) => Cancion(
     id: id, titulo: titulo, artista: artista, genero: genero,

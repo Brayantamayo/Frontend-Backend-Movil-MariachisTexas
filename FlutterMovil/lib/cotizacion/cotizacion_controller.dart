@@ -41,7 +41,7 @@ class CotizacionController extends ChangeNotifier {
       final lower = q.toLowerCase();
       _todas = _todasOriginales.where((c) =>
         c.clienteNombre.toLowerCase().contains(lower) ||
-        c.nombreHomenajeado.toLowerCase().contains(lower) ||
+        c.homenajeado.toLowerCase().contains(lower) ||
         c.tipoEventoLabel.toLowerCase().contains(lower) ||
         c.estadoLabel.toLowerCase().contains(lower),
       ).toList();
