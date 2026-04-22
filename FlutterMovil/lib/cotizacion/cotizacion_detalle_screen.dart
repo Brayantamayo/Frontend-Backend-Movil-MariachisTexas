@@ -58,7 +58,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
         title: Text(_cotizacion != null
             ? 'Cotización #${_cotizacion!.id}'
             : 'Detalle de Cotización'),
-        backgroundColor: (AppColors.primary),
+        backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -76,11 +76,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               _error!,
@@ -145,15 +141,15 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
-                          color: (AppColors.text),
+                          color: AppColors.text,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Para: ${c.nombreHomenajeado}',
+                        'Para: ${c.homenajeado}',
                         style: const TextStyle(
                           fontSize: 16,
-                          color: (AppColors.textMuted),
+                          color: AppColors.textMuted,
                         ),
                       ),
                     ],
@@ -185,13 +181,15 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
             const SizedBox(height: 12),
             _infoRow(Icons.person_outline, 'Cliente', c.clienteNombre),
             const SizedBox(height: 8),
-            _infoRow(Icons.calendar_month_outlined, 'Fecha del Evento',
-                '${c.fechaEvento.day}/${c.fechaEvento.month}/${c.fechaEvento.year}'),
+            _infoRow(
+              Icons.calendar_month_outlined,
+              'Fecha del Evento',
+              '${c.fechaEvento.day}/${c.fechaEvento.month}/${c.fechaEvento.year}',
+            ),
             const SizedBox(height: 8),
-            _infoRow(Icons.schedule, 'Horario',
-                '${_formatTime(c.horaInicio)} - ${_formatTime(c.horaFin)}'),
+            _infoRow(Icons.schedule, 'Horario', '${c.horaInicio} - ${c.horaFin}'),
             const SizedBox(height: 8),
-            _infoRow(Icons.place_outlined, 'Lugar', c.direccionEvento),
+            _infoRow(Icons.place_outlined, 'Lugar', c.ubicacion),
           ],
         ),
       ),
@@ -211,17 +209,18 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: (AppColors.text),
+                color: AppColors.text,
               ),
             ),
             const SizedBox(height: 12),
-            if (c.notasAdicionales != null &&
-                c.notasAdicionales!.isNotEmpty) ...[
-              _detailItem('Notas Adicionales', c.notasAdicionales!),
+            if (c.notas != null && c.notas!.isNotEmpty) ...[
+              _detailItem('Notas Adicionales', c.notas!),
               const SizedBox(height: 12),
             ],
-            _detailItem('Fecha de Creación',
-                '${c.createdAt.day}/${c.createdAt.month}/${c.createdAt.year}'),
+            _detailItem(
+              'Fecha de Creación',
+              '${c.createdAt.day}/${c.createdAt.month}/${c.createdAt.year}',
+            ),
             const SizedBox(height: 8),
             _detailItem('Reserva Directa', c.esReservaDirecta ? 'Sí' : 'No'),
           ],
@@ -232,12 +231,6 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
 
   Widget _buildContacto() {
     final c = _cotizacion!;
-    if (c.contactoNombre == null &&
-        c.contactoEmail == null &&
-        c.contactoTelefono == null) {
-      return const SizedBox.shrink();
-    }
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -245,29 +238,19 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Información de Contacto',
+              'Contacto',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: (AppColors.text),
+                color: AppColors.text,
               ),
             ),
             const SizedBox(height: 12),
-            if (c.contactoNombre != null) ...[
-              _detailItem('Nombre de Contacto', c.contactoNombre!),
-              const SizedBox(height: 8),
-            ],
-            if (c.contactoEmail != null) ...[
-              _detailItem('Email', c.contactoEmail!),
-              const SizedBox(height: 8),
-            ],
-            if (c.contactoTelefono != null) ...[
-              _detailItem('Teléfono Principal', c.contactoTelefono!),
-              const SizedBox(height: 8),
-            ],
-            if (c.contactoTelefono2 != null) ...[
-              _detailItem('Teléfono Alternativo', c.contactoTelefono2!),
-            ],
+            _detailItem('Nombre', c.clienteNombre),
+            const SizedBox(height: 8),
+            _detailItem('Email', c.clienteEmail),
+            const SizedBox(height: 8),
+            _detailItem('Teléfono', c.clienteTelefono),
           ],
         ),
       ),
@@ -287,61 +270,63 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: (AppColors.text),
+                color: AppColors.text,
               ),
             ),
             const SizedBox(height: 12),
-            ...c.servicios.map((servicio) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              servicio.servicio.nombre,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                            if (servicio.servicio.descripcion != null) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                servicio.servicio.descripcion!,
-                                style: const TextStyle(
-                                  color: (AppColors.textMuted),
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+            ...c.servicios.map(
+              (servicio) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Cant: ${servicio.cantidad}',
+                            servicio.servicio.nombre,
                             style: const TextStyle(
-                              fontSize: 12,
-                              color: (AppColors.textMuted),
-                            ),
-                          ),
-                          Text(
-                            formatCop(servicio.subtotal.round()),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                               fontSize: 16,
-                              color: (AppColors.primary),
                             ),
                           ),
+                          if (servicio.servicio.descripcion != null) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              servicio.servicio.descripcion!,
+                              style: const TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Cant: ${servicio.cantidad}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        Text(
+                          formatCop(servicio.subtotal.round()),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -363,64 +348,67 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: (AppColors.text),
+                color: AppColors.text,
               ),
             ),
             const SizedBox(height: 12),
-            ...c.repertorios.map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '${item.orden}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: (AppColors.primary),
-                          ),
+            ...c.repertorios.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${item.orden}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.repertorio.titulo,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                              ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.repertorio.titulo,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
                             ),
-                            Text(
-                              item.repertorio.artista,
-                              style: const TextStyle(
-                                color: (AppColors.textMuted),
-                                fontSize: 13,
-                              ),
+                          ),
+                          Text(
+                            item.repertorio.artista,
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 13,
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // duracion is non-nullable String, show if not empty
+                    if (item.repertorio.duracion.isNotEmpty)
+                      Text(
+                        item.repertorio.duracion,
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
                         ),
                       ),
-                      if (item.repertorio.duracion != null)
-                        Text(
-                          item.repertorio.duracion!,
-                          style: const TextStyle(
-                            color: (AppColors.textMuted),
-                            fontSize: 12,
-                          ),
-                        ),
-                    ],
-                  ),
-                )),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -440,7 +428,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: (AppColors.text),
+                color: AppColors.text,
               ),
             ),
             const SizedBox(height: 16),
@@ -449,7 +437,6 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.05),
-                
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: AppColors.primary.withValues(alpha: 0.2),
@@ -462,7 +449,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: (AppColors.textMuted),
+                      color: AppColors.textMuted,
                       letterSpacing: 1,
                     ),
                   ),
@@ -474,7 +461,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
-                      color: (AppColors.primary),
+                      color: AppColors.primary,
                     ),
                   ),
                 ],
@@ -494,20 +481,16 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
-                const Icon(
-                  Icons.bookmark_added,
-                  color:(AppColors.primary),
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                const Text(
+                Icon(Icons.bookmark_added, color: AppColors.primary, size: 20),
+                SizedBox(width: 8),
+                Text(
                   'Reserva Asociada',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color:(AppColors.text),
+                    color: AppColors.text,
                   ),
                 ),
               ],
@@ -515,17 +498,11 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
             const SizedBox(height: 12),
             _detailItem('ID de Reserva', '#${reserva.id}'),
             const SizedBox(height: 8),
-            _detailItem('Estado', reserva.estado),
-            if (reserva.totalValor != null) ...[
-              const SizedBox(height: 8),
-              _detailItem(
-                  'Valor Total', formatCop(reserva.totalValor!.round())),
-            ],
-            if (reserva.saldoPendiente != null) ...[
-              const SizedBox(height: 8),
-              _detailItem('Saldo Pendiente',
-                  formatCop(reserva.saldoPendiente!.round())),
-            ],
+            _detailItem('Estado', reserva.estadoLabel),
+            const SizedBox(height: 8),
+            _detailItem('Valor Total', formatCop(reserva.totalValor.round())),
+            const SizedBox(height: 8),
+            _detailItem('Saldo Pendiente', formatCop(reserva.saldoPendiente.round())),
           ],
         ),
       ),
@@ -535,13 +512,13 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
   Widget _infoRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: (AppColors.textMuted)),
+        Icon(icon, size: 18, color: AppColors.textMuted),
         const SizedBox(width: 8),
         Text(
           '$label: ',
           style: const TextStyle(
             fontWeight: FontWeight.w600,
-            color: (AppColors.textMuted),
+            color: AppColors.textMuted,
           ),
         ),
         Expanded(
@@ -549,7 +526,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
             value,
             style: const TextStyle(
               fontWeight: FontWeight.w600,
-              color: (AppColors.text),
+              color: AppColors.text,
             ),
           ),
         ),
@@ -566,7 +543,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: (AppColors.textMuted),
+            color: AppColors.textMuted,
             letterSpacing: 0.5,
           ),
         ),
@@ -576,7 +553,7 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
           style: const TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: (AppColors.text),
+            color: AppColors.text,
           ),
         ),
       ],
@@ -585,13 +562,9 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
 
   Color _getEstadoColor(EstadoCotizacion estado) {
     return switch (estado) {
-      EstadoCotizacion.enEspera => const Color(0xFFB45309),
+      EstadoCotizacion.enEspera   => const Color(0xFFB45309),
       EstadoCotizacion.convertida => const Color(0xFF047857),
-      EstadoCotizacion.anulada => const Color(0xFFB91C1C),
+      EstadoCotizacion.anulada    => const Color(0xFFB91C1C),
     };
-  }
-
-  String _formatTime(DateTime time) {
-    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 }

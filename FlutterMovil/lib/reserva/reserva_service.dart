@@ -56,13 +56,14 @@ class ReservaService {
 // ── Buscar reservas (filtro en cliente) ────────────────────────────────────
 
   Future<List<Reserva>> buscarReservas(String query) async {
-    final reservas = await getReservas();
-    final q = query.toLowerCase().trim();
-    return reservas
-        .where((r) =>
-            r.cotizacion?.nombreHomenajeado.toLowerCase().contains(q) ?? false)
-        .toList();
-  }
+  final reservas = await getReservas();
+  final q = query.toLowerCase().trim();
+  return reservas
+      .where((r) =>
+          r.homenajeado.toLowerCase().contains(q) ||
+          r.clienteNombre.toLowerCase().contains(q))
+      .toList();
+}
 
 // ── Detalle de reserva ─────────────────────────────────────────────────────
 
