@@ -26,10 +26,9 @@ class _LoginScreenState extends State<LoginScreen>
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fade;
 
-  static const _bg       = Color(0xFF1A0505);
-  static const _bgDeep   = Color(0xFF2D0B0B);
-  static const _red      = Color(0xFFC0392B);
-  static const _redDark  = Color(0xFFa93226);
+  static const _bg = Color(0xFF1A0505);
+  static const _bgDeep = Color(0xFF2D0B0B);
+  static const _red = Color(0xFFC0392B);
 
   @override
   void initState() {
@@ -69,12 +68,15 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _submit() async {
-    setState(() { _error = null; _loading = true; });
+    setState(() {
+      _error = null;
+      _loading = true;
+    });
     try {
       final ok = await context.read<AuthController>().login(
-        email: _email.text.trim(),
-        password: _password.text,
-      );
+            email: _email.text.trim(),
+            password: _password.text,
+          );
       if (!mounted) return;
       if (!ok) {
         _shakeCtrl.forward(from: 0);
@@ -89,9 +91,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   bool get _canSubmit =>
-      !_loading &&
-      _email.text.trim().isNotEmpty &&
-      _password.text.isNotEmpty;
+      !_loading && _email.text.trim().isNotEmpty && _password.text.isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -200,21 +200,22 @@ class _LoginScreenState extends State<LoginScreen>
               ),
               // Ícono
               Container(
-  width: 56,
-  height: 56,
-  decoration: const BoxDecoration(
-    color: _red,          // fondo rojo se mantiene si tu logo es transparente
-    shape: BoxShape.circle,
-  ),
-  child: ClipOval(
-    child: Image.asset(
-      'assets/images/Logo.png',
-      width: 56,
-      height: 56,
-      fit: BoxFit.cover,  // o BoxFit.contain si no quieres recorte
-    ),
-  ),
-),
+                width: 56,
+                height: 56,
+                decoration: const BoxDecoration(
+                  color:
+                      _red, // fondo rojo se mantiene si tu logo es transparente
+                  shape: BoxShape.circle,
+                ),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/Logo.png',
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover, // o BoxFit.contain si no quieres recorte
+                  ),
+                ),
+              ),
             ],
           ),
 
@@ -326,8 +327,7 @@ class _LoginScreenState extends State<LoginScreen>
             AnimatedBuilder(
               animation: _shake,
               builder: (context, child) {
-                final dx =
-                    6 * (0.5 - (_shake.value % 1.0)).abs() * 2;
+                final dx = 6 * (0.5 - (_shake.value % 1.0)).abs() * 2;
                 return Transform.translate(
                   offset: Offset(dx, 0),
                   child: child,
@@ -335,8 +335,8 @@ class _LoginScreenState extends State<LoginScreen>
               },
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 11),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEF2F2),
                   borderRadius: BorderRadius.circular(12),
@@ -468,8 +468,7 @@ class _LoginScreenState extends State<LoginScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.arrow_forward_rounded,
-            size: 16, color: Colors.white),
+        const Icon(Icons.arrow_forward_rounded, size: 16, color: Colors.white),
         const SizedBox(width: 8),
         Text(
           'Ingresar',
@@ -495,9 +494,7 @@ class _LoginScreenState extends State<LoginScreen>
           margin: const EdgeInsets.symmetric(horizontal: 3),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: active
-                ? _red.withOpacity(0.7)
-                : _red.withOpacity(0.18),
+            color: active ? _red.withOpacity(0.7) : _red.withOpacity(0.18),
           ),
         );
       }),
@@ -541,8 +538,7 @@ class _LoginScreenState extends State<LoginScreen>
             hintText: hint,
             hintStyle: GoogleFonts.dmSans(
                 fontSize: 14, color: const Color(0xFFCDB8B8)),
-            prefixIcon:
-                Icon(icon, size: 18, color: const Color(0xFF9A6060)),
+            prefixIcon: Icon(icon, size: 18, color: const Color(0xFF9A6060)),
             suffixIcon: suffix != null
                 ? Padding(
                     padding: const EdgeInsets.only(right: 12),
@@ -555,18 +551,17 @@ class _LoginScreenState extends State<LoginScreen>
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(
-                  color: Color(0xFFF0E5E5), width: 1.5),
+              borderSide:
+                  const BorderSide(color: Color(0xFFF0E5E5), width: 1.5),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(
-                  color: Color(0xFFF0E5E5), width: 1.5),
+              borderSide:
+                  const BorderSide(color: Color(0xFFF0E5E5), width: 1.5),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide:
-                  const BorderSide(color: _red, width: 1.5),
+              borderSide: const BorderSide(color: _red, width: 1.5),
             ),
           ),
         ),
@@ -588,15 +583,13 @@ class _BackgroundPainter extends CustomPainter {
 
     // Líneas verticales laterales
     thinLine.color = _red.withOpacity(0.12);
-    canvas.drawLine(
-        const Offset(22, 0), Offset(22, size.height), thinLine);
+    canvas.drawLine(const Offset(22, 0), Offset(22, size.height), thinLine);
     canvas.drawLine(Offset(size.width - 22, 0),
         Offset(size.width - 22, size.height), thinLine);
 
     // Líneas horizontales
     thinLine.color = _red.withOpacity(0.08);
-    canvas.drawLine(
-        const Offset(0, 100), Offset(size.width, 100), thinLine);
+    canvas.drawLine(const Offset(0, 100), Offset(size.width, 100), thinLine);
     canvas.drawLine(Offset(0, size.height - 100),
         Offset(size.width, size.height - 100), thinLine);
 
@@ -611,8 +604,7 @@ class _BackgroundPainter extends CustomPainter {
         center: Offset(size.width / 2, 0),
         radius: size.width * 0.8,
       ));
-    canvas.drawCircle(
-        Offset(size.width / 2, 0), size.width * 0.8, glowPaint);
+    canvas.drawCircle(Offset(size.width / 2, 0), size.width * 0.8, glowPaint);
 
     // Ornamentos de esquinas
     final cornerPaint = Paint()
@@ -623,10 +615,9 @@ class _BackgroundPainter extends CustomPainter {
 
     _drawCorner(canvas, cornerPaint, 32, 32, false, false);
     _drawCorner(canvas, cornerPaint, size.width - 32, 32, true, false);
+    _drawCorner(canvas, cornerPaint, 32, size.height - 32, false, true);
     _drawCorner(
-        canvas, cornerPaint, 32, size.height - 32, false, true);
-    _drawCorner(canvas, cornerPaint, size.width - 32,
-        size.height - 32, true, true);
+        canvas, cornerPaint, size.width - 32, size.height - 32, true, true);
 
     // Notas musicales decorativas
     _drawMusicNote(canvas, size.width * 0.1, size.height * 0.32, 0.12);
@@ -635,19 +626,16 @@ class _BackgroundPainter extends CustomPainter {
     _drawMusicNote(canvas, size.width * 0.85, size.height * 0.22, 0.1);
   }
 
-  void _drawCorner(Canvas canvas, Paint paint, double x, double y,
-      bool flipX, bool flipY) {
+  void _drawCorner(
+      Canvas canvas, Paint paint, double x, double y, bool flipX, bool flipY) {
     const arm = 22.0;
     final dx = flipX ? -1.0 : 1.0;
     final dy = flipY ? -1.0 : 1.0;
-    canvas.drawLine(
-        Offset(x, y), Offset(x + arm * dx, y), paint);
-    canvas.drawLine(
-        Offset(x, y), Offset(x, y + arm * dy), paint);
+    canvas.drawLine(Offset(x, y), Offset(x + arm * dx, y), paint);
+    canvas.drawLine(Offset(x, y), Offset(x, y + arm * dy), paint);
   }
 
-  void _drawMusicNote(
-      Canvas canvas, double x, double y, double opacity) {
+  void _drawMusicNote(Canvas canvas, double x, double y, double opacity) {
     final textPainter = TextPainter(
       text: TextSpan(
         text: '♪',

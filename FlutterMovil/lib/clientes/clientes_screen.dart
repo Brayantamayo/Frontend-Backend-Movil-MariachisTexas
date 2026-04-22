@@ -1,26 +1,9 @@
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import 'package:mariachi_admin/auth/auth_controller.dart';
+import 'package:mariachi_admin/clientes/clientes_controller.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import '../core/theme/app_colors.dart';
-
-enum EstadoCliente { activo, inactivo }
-
-class Cliente {
-  final int id;
-  final String nombre;
-  final String telefono;
-  final int eventos;
-  final String ultimo;
-  EstadoCliente estado;
-
-  Cliente({
-    required this.id,
-    required this.nombre,
-    required this.telefono,
-    required this.eventos,
-    required this.ultimo,
-    required this.estado,
-  });
-}
 
 class ClientesScreen extends StatefulWidget {
   const ClientesScreen({super.key});
@@ -32,12 +15,13 @@ class ClientesScreen extends StatefulWidget {
 class _ClientesScreenState extends State<ClientesScreen> {
   final _search = TextEditingController();
 
-  final List<Cliente> _items = [
-    Cliente(id: 1, nombre: 'Familia Martínez', telefono: '555-0123', eventos: 3, ultimo: 'Hace 2 meses', estado: EstadoCliente.activo),
-    Cliente(id: 2, nombre: 'Empresa XYZ', telefono: '555-0456', eventos: 5, ultimo: 'Hace 1 mes', estado: EstadoCliente.activo),
-    Cliente(id: 3, nombre: 'Juan Pérez', telefono: '555-0789', eventos: 1, ultimo: 'Nuevo', estado: EstadoCliente.inactivo),
-    Cliente(id: 4, nombre: 'María González', telefono: '555-0987', eventos: 2, ultimo: 'Hace 6 meses', estado: EstadoCliente.activo),
-  ];
+  @override
+  void initState() {
+  super.initState();
+WidgetsBinding.instance.addPostFrameCallback((_) {
+  context.read<ClientesController>().cargarClientes();
+});
+}
 
   @override
   void dispose() {
@@ -45,66 +29,20 @@ class _ClientesScreenState extends State<ClientesScreen> {
     super.dispose();
   }
 
-  List<Cliente> get _filtered {
-    final q = _search.text.trim().toLowerCase();
-    if (q.isEmpty) return _items;
-    return _items.where((c) {
-      return c.nombre.toLowerCase().contains(q) || c.telefono.contains(q);
-    }).toList();
-  }
-
-  void _toggle(Cliente c) {
-    setState(() {
-      c.estado = c.estado == EstadoCliente.activo ? EstadoCliente.inactivo : EstadoCliente.activo;
-    });
-  }
-
-  Future<void> _delete(Cliente c) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Eliminar cliente'),
-        content: const Text('¿Estás seguro de eliminar este cliente?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: const Color(AppColors.primary)),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    setState(() => _items.removeWhere((x) => x.id == c.id));
-  }
-
-  Future<void> _detalle(Cliente c) async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Detalle del Cliente'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _kv('Nombre', c.nombre),
-            _kv('Estado', c.estado.name),
-            _kv('Teléfono', c.telefono),
-            _kv('Total Eventos', '${c.eventos}'),
-            _kv('Último Evento', c.ultimo),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
-        ],
-      ),
-    );
-  }
+List<Cliente> _filtered(List<Cliente> clientes) {
+  final q = _search.text.trim().toLowerCase();
+  if (q.isEmpty) return clientes;
+  return clientes.where((c) {
+    return c.nombreCompleto.toLowerCase().contains(q) ||
+        (c.telefonoPrincipal ?? '').toLowerCase().contains(q);
+  }).toList();
+}
 
   @override
   Widget build(BuildContext context) {
-    final items = _filtered;
+    final controller = context.watch<ClientesController>();
+    final items = _filtered(controller.clientes);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       child: Column(
@@ -112,7 +50,7 @@ class _ClientesScreenState extends State<ClientesScreen> {
         children: [
           const Text(
             'Clientes',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(AppColors.text)),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: (AppColors.text)),
           ),
           const SizedBox(height: 14),
           TextField(
@@ -126,21 +64,20 @@ class _ClientesScreenState extends State<ClientesScreen> {
           ),
           const SizedBox(height: 14),
           Expanded(
-            child: items.isEmpty
-                ? const Center(child: Text('No se encontraron clientes.'))
-                : ListView.separated(
-                    itemCount: items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (_, i) {
-                      final c = items[i];
-                      return _ClienteCard(
-                        c: c,
-                        onDetalle: () => _detalle(c),
-                        onToggle: () => _toggle(c),
-                        onDelete: () => _delete(c),
-                      );
-                    },
-                  ),
+            child: controller.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : controller.error != null
+                    ? Center(child: Text(controller.error!, style: const TextStyle(color: Colors.red)))
+                    : items.isEmpty
+                        ? const Center(child: Text('No se encontraron clientes.'))
+                        : ListView.separated(
+                            itemCount: items.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            itemBuilder: (_, i) {
+                              final c = items[i];
+                              return _ClienteCard(c: c);
+                            },
+                          ),
           ),
         ],
       ),
@@ -150,18 +87,16 @@ class _ClientesScreenState extends State<ClientesScreen> {
 
 class _ClienteCard extends StatelessWidget {
   final Cliente c;
-  final VoidCallback onDetalle;
-  final VoidCallback onToggle;
-  final VoidCallback onDelete;
-
-  const _ClienteCard({required this.c, required this.onDetalle, required this.onToggle, required this.onDelete});
+  const _ClienteCard({required this.c});
 
   @override
   Widget build(BuildContext context) {
-    final active = c.estado == EstadoCliente.activo;
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: Color(0xFFE2E8F0))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
@@ -169,72 +104,40 @@ class _ClienteCard extends StatelessWidget {
             Container(
               width: 48,
               height: 48,
-              decoration: BoxDecoration(
-                color: active ? const Color(0xFFFEF2F2) : const Color(0xFFF1F5F9),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFEF2F2),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.person, color: active ? const Color(AppColors.primary) : const Color(AppColors.textMuted)),
+              child: const Icon(Icons.person, color: (AppColors.primary)),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          c.nombre,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            color: active ? const Color(AppColors.text) : const Color(AppColors.textMuted),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: active ? const Color(0xFF22C55E) : const Color(0xFFCBD5E1),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    c.nombreCompleto,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w900, color: (AppColors.text)),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.phone, size: 14, color: Color(AppColors.textMuted)),
+                      const Icon(Icons.phone, size: 14, color: (AppColors.textMuted)),
                       const SizedBox(width: 6),
-                      Text(c.telefono, style: const TextStyle(color: Color(AppColors.textMuted))),
+                      Text(c.telefonoPrincipal ?? 'Sin teléfono', style: const TextStyle(color: (AppColors.textMuted))),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.email, size: 14, color: (AppColors.textMuted)),
+                      const SizedBox(width: 6),
+                      Text(c.email ?? 'Sin email', style: const TextStyle(color: (AppColors.textMuted), fontSize: 12)),
                     ],
                   ),
                 ],
               ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text('${c.eventos} eventos', style: const TextStyle(color: Color(AppColors.primary), fontWeight: FontWeight.w900)),
-                Text(c.ultimo, style: const TextStyle(fontSize: 11, color: Color(AppColors.textMuted))),
-              ],
-            ),
-            const SizedBox(width: 6),
-            PopupMenuButton<String>(
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'detalle', child: Text('Ver Detalle')),
-                PopupMenuItem(value: 'toggle', child: Text('Activar/Desactivar')),
-                PopupMenuDivider(),
-                PopupMenuItem(value: 'delete', child: Text('Eliminar')),
-              ],
-              onSelected: (v) {
-                if (v == 'detalle') onDetalle();
-                if (v == 'toggle') onToggle();
-                if (v == 'delete') onDelete();
-              },
             ),
           ],
         ),
@@ -242,18 +145,3 @@ class _ClienteCard extends StatelessWidget {
     );
   }
 }
-
-Widget _kv(String k, String v) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(k, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(AppColors.textMuted))),
-        const SizedBox(height: 2),
-        Text(v, style: const TextStyle(fontWeight: FontWeight.w600)),
-      ],
-    ),
-  );
-}
-

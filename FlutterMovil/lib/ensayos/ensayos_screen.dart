@@ -65,7 +65,7 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: const Color(AppColors.primary)),
+            style: FilledButton.styleFrom(backgroundColor: (AppColors.primary)),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Eliminar'),
           ),
@@ -110,7 +110,7 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
         children: [
           const Text(
             'Ensayos',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(AppColors.text)),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color:(AppColors.text)),
           ),
           const SizedBox(height: 14),
           TextField(
@@ -188,7 +188,7 @@ class _EnsayoCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
-                          color: listo ? const Color(AppColors.textMuted) : const Color(AppColors.text),
+                          color: listo ? (AppColors.textMuted) : (AppColors.text),
                           decoration: listo ? TextDecoration.lineThrough : TextDecoration.none,
                         ),
                       ),
@@ -236,7 +236,7 @@ class _EnsayoCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: const Color(AppColors.textMuted)),
+        Icon(icon, size: 16, color: (AppColors.textMuted)),
         const SizedBox(width: 6),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 240),
@@ -253,7 +253,7 @@ Widget _kv(String k, String v) {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(k, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(AppColors.textMuted))),
+        Text(k, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: (AppColors.textMuted))),
         const SizedBox(height: 2),
         Text(v, style: const TextStyle(fontWeight: FontWeight.w600)),
       ],

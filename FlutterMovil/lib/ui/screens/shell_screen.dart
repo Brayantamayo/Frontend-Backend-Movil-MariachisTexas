@@ -4,12 +4,11 @@ import 'package:provider/provider.dart';
 
 import '../../auth/auth_controller.dart';
 import '../../core/theme/app_colors.dart';
-import '../widgets/bottom_nav.dart';
 import '../../clientes/clientes_screen.dart';
 import '../../cotizacion/cotizaciones_screen.dart';
 import '../../ensayos/ensayos_screen.dart';
 import '../../repertorio/repertorio_screen.dart';
-import '../../reservas/reservas_screen.dart';
+import '../../reserva/reservas_screen.dart';
 
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key});
@@ -76,7 +75,7 @@ class _ShellScreenState extends State<ShellScreen>
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
-    final primary = const Color(AppColors.primary);
+    final primary =AppColors.primary;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
@@ -458,9 +457,8 @@ class _NavItemState extends State<_NavItem>
                 duration: const Duration(milliseconds: 200),
                 style: TextStyle(
                   fontSize: 10,
-                  fontWeight: widget.selected
-                      ? FontWeight.w700
-                      : FontWeight.w400,
+                  fontWeight:
+                      widget.selected ? FontWeight.w700 : FontWeight.w400,
                   color: widget.selected
                       ? widget.primary
                       : const Color(0xFFADB5BD),
