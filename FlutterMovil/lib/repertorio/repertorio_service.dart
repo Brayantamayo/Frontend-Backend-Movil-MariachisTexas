@@ -2,10 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'cancion.model.dart';
+import '../core/config/env.dart';
 
 class RepertorioService {
-static const String _baseUrl = 'http://localhost:3000';
-
   // ── Token ────────────────────────────────────────────────────────────────────
 
   Future<String?> _getToken() async {
@@ -24,14 +23,16 @@ static const String _baseUrl = 'http://localhost:3000';
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    final uri = Uri.parse('$_baseUrl/api/repertorio');
+    final uri = Uri.parse(Env.endpoint('repertorio'));
     final response = await http
         .get(uri, headers: _headers(token))
         .timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => Cancion.fromJson(e as Map<String, dynamic>)).toList();
+      return data
+          .map((e) => Cancion.fromJson(e as Map<String, dynamic>))
+          .toList();
     } else {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       throw Exception(body['message'] ?? 'Error al cargar repertorio');
@@ -44,14 +45,17 @@ static const String _baseUrl = 'http://localhost:3000';
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    final uri = Uri.parse('$_baseUrl/api/repertorio/search?q=${Uri.encodeComponent(query)}');
+    final uri = Uri.parse(
+        Env.endpoint('repertorio/search?q=${Uri.encodeComponent(query)}'));
     final response = await http
         .get(uri, headers: _headers(token))
         .timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => Cancion.fromJson(e as Map<String, dynamic>)).toList();
+      return data
+          .map((e) => Cancion.fromJson(e as Map<String, dynamic>))
+          .toList();
     } else {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       throw Exception(body['message'] ?? 'Error al buscar');
@@ -64,13 +68,14 @@ static const String _baseUrl = 'http://localhost:3000';
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    final uri = Uri.parse('$_baseUrl/api/repertorio/$id');
+    final uri = Uri.parse(Env.endpoint('repertorio/$id'));
     final response = await http
         .get(uri, headers: _headers(token))
         .timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
-      return Cancion.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      return Cancion.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     } else {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       throw Exception(body['message'] ?? 'Error al cargar detalle');
@@ -83,13 +88,14 @@ static const String _baseUrl = 'http://localhost:3000';
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    final uri = Uri.parse('$_baseUrl/api/repertorio/$id/toggle');
+    final uri = Uri.parse(Env.endpoint('repertorio/$id/toggle'));
     final response = await http
         .patch(uri, headers: _headers(token))
         .timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
-      return Cancion.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      return Cancion.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>);
     } else {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       throw Exception(body['message'] ?? 'Error al cambiar estado');
@@ -102,7 +108,7 @@ static const String _baseUrl = 'http://localhost:3000';
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    final uri = Uri.parse('$_baseUrl/api/repertorio/$id');
+    final uri = Uri.parse(Env.endpoint('repertorio/$id'));
     final response = await http
         .delete(uri, headers: _headers(token))
         .timeout(const Duration(seconds: 10));

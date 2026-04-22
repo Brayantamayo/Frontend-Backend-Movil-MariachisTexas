@@ -8,7 +8,9 @@ class NetworkConfig {
 
   /// URLs alternativas para probar en caso de fallo
   static List<String> get fallbackUrls => [
-        _emulatorIP, // Emulador Android (prioritario)
+        'http://localhost:3000', // Tu backend local
+        'http://192.168.18.158:3000', // Tu IP con puerto 3000
+        _emulatorIP, // Emulador Android
         _localhost, // Localhost
         _localIP, // Red local
       ];

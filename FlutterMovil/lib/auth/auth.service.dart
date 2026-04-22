@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/config/env.dart';
 import '../core/config/network_config.dart';
 
 class AuthService {
@@ -9,15 +10,7 @@ class AuthService {
     required String password,
   }) async {
     try {
-      // Encontrar una URL que funcione
-      String? baseUrl = await NetworkConfig.findWorkingUrl();
-      if (baseUrl == null) {
-        throw Exception(
-            'No se puede conectar al servidor. Verifica que esté corriendo en localhost:3000');
-      }
-
-      final uri = Uri.parse('$baseUrl/api/auth/login');
-      print('🔍 AuthService: Intentando login en: $uri');
+      final uri = Uri.parse(Env.endpoint('auth/login'));
 
       final response = await http
           .post(
@@ -30,15 +23,12 @@ class AuthService {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200) {
-        print('✅ AuthService: Login exitoso');
-
         // 🔥 AQUÍ GUARDAS EL TOKEN
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', body['token']);
 
         return body;
       } else {
-        print('❌ AuthService: Error en login - Status: ${response.statusCode}');
         throw Exception(body['message'] ?? 'Error al iniciar sesión');
       }
     } on Exception {

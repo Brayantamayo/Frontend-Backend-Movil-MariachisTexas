@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'reserva.model.dart';
+import '../core/config/env.dart';
 import '../core/config/network_config.dart';
 
 class ReservaService {
@@ -10,31 +11,18 @@ class ReservaService {
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    print(
-        '🔍 ReservaService: Retrieved token: ${token?.substring(0, 20) ?? 'null'}...');
     return token;
   }
 
   // ── Obtener todas las reservas ─────────────────────────────────────────────
 
   Future<List<Reserva>> getReservas() async {
-    print('🔍 ReservaService: Iniciando getReservas()');
-
     final token = await _getToken();
     if (token == null) {
-      print('❌ ReservaService: No hay token, usuario no autenticado');
       throw Exception('No autenticado');
     }
 
-    // Intentar encontrar una URL que funcione
-    String? workingUrl = await NetworkConfig.findWorkingUrl();
-    if (workingUrl == null) {
-      throw Exception(
-          'No se puede conectar al servidor. Verifica que esté corriendo en localhost:3000');
-    }
-
-    final uri = Uri.parse('$workingUrl/api/reservas');
-    print('🔍 ReservaService: Haciendo petición a: $uri');
+    final uri = Uri.parse(Env.endpoint('reservas'));
 
     try {
       final response = await http
@@ -102,18 +90,10 @@ class ReservaService {
   // ── Obtener detalle de reserva ─────────────────────────────────────────────
 
   Future<Reserva> getReservaById(int id) async {
-    print('🔍 ReservaService: Obteniendo detalle de reserva $id');
-
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    String? workingUrl = await NetworkConfig.findWorkingUrl();
-    if (workingUrl == null) {
-      throw Exception('No se puede conectar al servidor');
-    }
-
-    final uri = Uri.parse('$workingUrl/api/reservas/$id');
-    print('🔍 ReservaService: Haciendo petición GET a: $uri');
+    final uri = Uri.parse(Env.endpoint('reservas/$id'));
 
     try {
       final response = await http
