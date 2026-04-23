@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/format/currency.dart';
 import '../core/theme/app_colors.dart';
-import 'cotizacion.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import 'cotizacion_controller.dart';
 import 'cotizacion_detalle_screen.dart';
 
@@ -33,8 +33,8 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
     super.dispose();
   }
 
-  Future<void> _onSearch(String query) async {
-    await _controller.buscar(query);
+  void _onSearch(String query) {
+    _controller.buscar(query);
   }
 
   Future<void> _showDetalle(Cotizacion c) async {
@@ -64,9 +64,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(AppColors.primary),
-            ),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Convertir'),
           ),
@@ -85,8 +83,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
                 ? 'Cotización convertida a reserva exitosamente'
                 : _controller.errorMsg,
           ),
-          backgroundColor:
-              success ? Colors.green : const Color(AppColors.primary),
+          backgroundColor: success ? Colors.green : AppColors.primary,
         ),
       );
     }
@@ -106,9 +103,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(AppColors.primary),
-            ),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Anular'),
           ),
@@ -125,8 +120,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
           content: Text(
             success ? 'Cotización anulada exitosamente' : _controller.errorMsg,
           ),
-          backgroundColor:
-              success ? Colors.orange : const Color(AppColors.primary),
+          backgroundColor: success ? Colors.orange : AppColors.primary,
         ),
       );
     }
@@ -137,7 +131,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('No se puede eliminar una cotización con reserva'),
-          backgroundColor: Color(AppColors.primary),
+          backgroundColor: AppColors.primary,
         ),
       );
       return;
@@ -157,9 +151,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(AppColors.primary),
-            ),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Eliminar'),
           ),
@@ -178,15 +170,13 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
                 ? 'Cotización eliminada exitosamente'
                 : _controller.errorMsg,
           ),
-          backgroundColor:
-              success ? Colors.red : const Color(AppColors.primary),
+          backgroundColor: success ? Colors.red : AppColors.primary,
         ),
       );
     }
   }
 
   Future<void> _verPDF(Cotizacion c) async {
-    // Mostrar indicador de carga
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -205,7 +195,6 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
     try {
       final success = await _controller.descargarPDF(c.id);
 
-      // Cerrar indicador de carga
       if (mounted) Navigator.pop(context);
 
       if (success && mounted) {
@@ -218,22 +207,23 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_controller.errorMsg.isNotEmpty
-                ? _controller.errorMsg
-                : 'Error al descargar PDF'),
-            backgroundColor: const Color(AppColors.primary),
+            content: Text(
+              _controller.errorMsg.isNotEmpty
+                  ? _controller.errorMsg
+                  : 'Error al descargar PDF',
+            ),
+            backgroundColor: AppColors.primary,
           ),
         );
       }
     } catch (e) {
-      // Cerrar indicador de carga en caso de error
       if (mounted) Navigator.pop(context);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al descargar PDF: $e'),
-            backgroundColor: const Color(AppColors.primary),
+            backgroundColor: AppColors.primary,
           ),
         );
       }
@@ -255,12 +245,10 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
-                    color: Color(AppColors.text),
+                    color: AppColors.text,
                   ),
                 ),
                 const SizedBox(height: 14),
-
-                // Barra de búsqueda
                 TextField(
                   controller: _search,
                   decoration: const InputDecoration(
@@ -270,13 +258,8 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
                   ),
                   onChanged: _onSearch,
                 ),
-
                 const SizedBox(height: 14),
-
-                // Contenido principal
-                Expanded(
-                  child: _buildContent(controller),
-                ),
+                Expanded(child: _buildContent(controller)),
               ],
             ),
           ),
@@ -297,11 +280,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.grey[400],
-              ),
+              Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
               const SizedBox(height: 16),
               Text(
                 controller.errorMsg,
@@ -317,9 +296,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
           ),
         ),
       CotizacionStatus.listo => controller.cotizaciones.isEmpty
-          ? const Center(
-              child: Text('No se encontraron cotizaciones.'),
-            )
+          ? const Center(child: Text('No se encontraron cotizaciones.'))
           : ListView.separated(
               itemCount: controller.cotizaciones.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -359,17 +336,17 @@ class _CotizacionCard extends StatelessWidget {
 
   Color _pillBg() {
     return switch (c.estado) {
-      EstadoCotizacion.enEspera => const Color(0xFFFEF3C7),
+      EstadoCotizacion.enEspera   => const Color(0xFFFEF3C7),
       EstadoCotizacion.convertida => const Color(0xFFDCFCE7),
-      EstadoCotizacion.anulada => const Color(0xFFFEE2E2),
+      EstadoCotizacion.anulada    => const Color(0xFFFEE2E2),
     };
   }
 
   Color _pillFg() {
     return switch (c.estado) {
-      EstadoCotizacion.enEspera => const Color(0xFFB45309),
+      EstadoCotizacion.enEspera   => const Color(0xFFB45309),
       EstadoCotizacion.convertida => const Color(0xFF047857),
-      EstadoCotizacion.anulada => const Color(0xFFB91C1C),
+      EstadoCotizacion.anulada    => const Color(0xFFB91C1C),
     };
   }
 
@@ -397,7 +374,7 @@ class _CotizacionCard extends StatelessWidget {
                           Text(
                             '#${c.id}',
                             style: const TextStyle(
-                              color: Color(AppColors.textMuted),
+                              color: AppColors.textMuted,
                               fontWeight: FontWeight.w800,
                               fontSize: 12,
                             ),
@@ -409,7 +386,7 @@ class _CotizacionCard extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w900,
-                                color: Color(AppColors.text),
+                                color: AppColors.text,
                               ),
                             ),
                           ),
@@ -418,16 +395,14 @@ class _CotizacionCard extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         c.clienteNombre,
-                        style: const TextStyle(
-                          color: Color(AppColors.textMuted),
-                        ),
+                        style: const TextStyle(color: AppColors.textMuted),
                       ),
-                      if (c.nombreHomenajeado.isNotEmpty) ...[
+                      if (c.homenajeado.isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(
-                          'Para: ${c.nombreHomenajeado}',
+                          'Para: ${c.homenajeado}',
                           style: const TextStyle(
-                            color: Color(AppColors.textMuted),
+                            color: AppColors.textMuted,
                             fontSize: 12,
                           ),
                         ),
@@ -501,8 +476,7 @@ class _CotizacionCard extends StatelessWidget {
                       value: 'eliminar',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline,
-                              size: 18, color: Colors.red),
+                          Icon(Icons.delete_outline, size: 18, color: Colors.red),
                           SizedBox(width: 8),
                           Text('Eliminar', style: TextStyle(color: Colors.red)),
                         ],
@@ -513,19 +487,14 @@ class _CotizacionCard extends StatelessWidget {
                     switch (v) {
                       case 'detalle':
                         onDetalle();
-                        break;
                       case 'convertir':
                         onConvertir?.call();
-                        break;
                       case 'anular':
                         onAnular?.call();
-                        break;
                       case 'pdf':
                         onVerPDF();
-                        break;
                       case 'eliminar':
                         onEliminar();
-                        break;
                     }
                   },
                 ),
@@ -533,16 +502,17 @@ class _CotizacionCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Información del evento
+            // Información del evento — horaInicio/horaFin son String
             Wrap(
               spacing: 14,
               runSpacing: 8,
               children: [
-                _info(Icons.calendar_month_outlined,
-                    '${c.fechaEvento.day}/${c.fechaEvento.month}/${c.fechaEvento.year}'),
-                _info(Icons.schedule,
-                    '${c.horaInicio.hour.toString().padLeft(2, '0')}:${c.horaInicio.minute.toString().padLeft(2, '0')}'),
-                _info(Icons.place_outlined, c.direccionEvento),
+                _info(
+                  Icons.calendar_month_outlined,
+                  '${c.fechaEvento.day}/${c.fechaEvento.month}/${c.fechaEvento.year}',
+                ),
+                _info(Icons.schedule, '${c.horaInicio} - ${c.horaFin}'),
+                _info(Icons.place_outlined, c.ubicacion),
               ],
             ),
 
@@ -550,7 +520,6 @@ class _CotizacionCard extends StatelessWidget {
             const Divider(height: 1),
             const SizedBox(height: 10),
 
-            // Total y servicios
             Row(
               children: [
                 Expanded(
@@ -561,7 +530,7 @@ class _CotizacionCard extends StatelessWidget {
                         'Total Estimado',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(AppColors.textMuted),
+                          color: AppColors.textMuted,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -572,7 +541,7 @@ class _CotizacionCard extends StatelessWidget {
                             : 'No calculado',
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
-                          color: Color(AppColors.text),
+                          color: AppColors.text,
                         ),
                       ),
                     ],
@@ -586,7 +555,7 @@ class _CotizacionCard extends StatelessWidget {
                         'Servicios',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(AppColors.textMuted),
+                          color: AppColors.textMuted,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -595,7 +564,7 @@ class _CotizacionCard extends StatelessWidget {
                         '${c.servicios.length} servicio${c.servicios.length != 1 ? 's' : ''}',
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: Color(AppColors.text),
+                          color: AppColors.text,
                         ),
                       ),
                     ],
@@ -613,7 +582,7 @@ class _CotizacionCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: const Color(AppColors.textMuted)),
+        Icon(icon, size: 16, color: AppColors.textMuted),
         const SizedBox(width: 6),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 200),

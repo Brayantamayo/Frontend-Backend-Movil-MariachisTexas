@@ -1,115 +1,103 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'cancion.model.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../core/config/network_config.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 
 class RepertorioService {
-static const String _baseUrl = 'http://localhost:3000';
+  static const _storage = FlutterSecureStorage();
 
-  // ── Token ────────────────────────────────────────────────────────────────────
+  Future<String?> _getToken() => _storage.read(key: 'token');
 
-  Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
-  }
+  Map<String, String> _headers(String token) =>
+      NetworkConfig.authHeaders(token);
 
-  Map<String, String> _headers(String token) => {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
-
-  // ── Obtener lista de canciones activas ────────────────────────────────────
-
-  Future<List<Cancion>> getCanciones() async {
+////Obtener Lista de Canciones
+Future<List<Cancion>> getCanciones() async {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    final uri = Uri.parse('$_baseUrl/api/repertorio');
-    final response = await http
-        .get(uri, headers: _headers(token))
-        .timeout(const Duration(seconds: 10));
+    final res = await http
+        .get(Uri.parse('${NetworkConfig.baseUrl}/api/repertorio'),
+            headers: _headers(token))
+        .timeout(NetworkConfig.timeout);
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
+    if (res.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(res.body);
       return data.map((e) => Cancion.fromJson(e as Map<String, dynamic>)).toList();
-    } else {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(body['message'] ?? 'Error al cargar repertorio');
     }
+    throw Exception(_msg(res.body));
   }
 
-  // ── Buscar canciones ───────────────────────────────────────────────────────
-
-  Future<List<Cancion>> buscarCanciones(String query) async {
+////Obtener Canciones por búsqueda
+Future<List<Cancion>> buscarCanciones(String query) async {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    final uri = Uri.parse('$_baseUrl/api/repertorio/search?q=${Uri.encodeComponent(query)}');
-    final response = await http
-        .get(uri, headers: _headers(token))
-        .timeout(const Duration(seconds: 10));
+    final res = await http
+        .get(
+            Uri.parse('${NetworkConfig.baseUrl}/api/repertorio/search?q=${Uri.encodeComponent(query)}'),
+            headers: _headers(token))
+        .timeout(NetworkConfig.timeout);
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
+    if (res.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(res.body);
       return data.map((e) => Cancion.fromJson(e as Map<String, dynamic>)).toList();
-    } else {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(body['message'] ?? 'Error al buscar');
     }
+    throw Exception(_msg(res.body));
   }
 
-  // ── Detalle completo (con letra) ──────────────────────────────────────────
 
-  Future<Cancion> getDetalle(int id) async {
+/// Obtener Detalle de una Canción
+Future<Cancion> getDetalle(int id) async {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    final uri = Uri.parse('$_baseUrl/api/repertorio/$id');
-    final response = await http
-        .get(uri, headers: _headers(token))
-        .timeout(const Duration(seconds: 10));
+    final res = await http
+        ////Obtener Detalle de una Canción
+        .get(Uri.parse('${NetworkConfig.baseUrl}/api/repertorio/$id'),
+            headers: _headers(token))
+        .timeout(NetworkConfig.timeout);
 
-    if (response.statusCode == 200) {
-      return Cancion.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
-    } else {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(body['message'] ?? 'Error al cargar detalle');
+    if (res.statusCode == 200) {
+      return Cancion.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
     }
+    throw Exception(_msg(res.body));
   }
 
-  // ── Activar / Desactivar ──────────────────────────────────────────────────
+////Activar / Desactivar una Canción
+Future<Cancion> toggleCancion(int id) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('No autenticado');
+    final res = await http
+        .patch(Uri.parse('${NetworkConfig.baseUrl}/api/repertorio/$id/toggle'),
+            headers: _headers(token))
+        .timeout(NetworkConfig.timeout);
 
-  Future<Cancion> toggleCancion(int id) async {
+    if (res.statusCode == 200) {
+      return Cancion.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+    }
+    throw Exception(_msg(res.body));
+  }
+
+/// Eliminar una Canción
+Future<void> eliminarCancion(int id) async {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-    final uri = Uri.parse('$_baseUrl/api/repertorio/$id/toggle');
-    final response = await http
-        .patch(uri, headers: _headers(token))
-        .timeout(const Duration(seconds: 10));
+    final res = await http
+        .delete(Uri.parse('${NetworkConfig.baseUrl}/api/repertorio/$id'),
+            headers: _headers(token))
+        .timeout(NetworkConfig.timeout);
 
-    if (response.statusCode == 200) {
-      return Cancion.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
-    } else {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(body['message'] ?? 'Error al cambiar estado');
-    }
+    if (res.statusCode != 200) throw Exception(_msg(res.body));
   }
 
-  // ── Eliminar ──────────────────────────────────────────────────────────────
-
-  Future<void> eliminarCancion(int id) async {
-    final token = await _getToken();
-    if (token == null) throw Exception('No autenticado');
-
-    final uri = Uri.parse('$_baseUrl/api/repertorio/$id');
-    final response = await http
-        .delete(uri, headers: _headers(token))
-        .timeout(const Duration(seconds: 10));
-
-    if (response.statusCode != 200) {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(body['message'] ?? 'Error al eliminar');
+  String _msg(String body) {
+    try {
+      return (jsonDecode(body) as Map<String, dynamic>)['message'] ?? 'Error desconocido';
+    } catch (_) {
+      return 'Error desconocido';
     }
   }
 }

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/format/currency.dart';
 import '../core/theme/app_colors.dart';
-import 'reserva.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import 'reserva_controller.dart';
 
 class ReservasScreen extends StatefulWidget {
@@ -59,7 +59,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Saldo pendiente: ${formatCop(reserva.saldoPendiente?.round() ?? 0)}',
+              'Saldo pendiente: ${formatCop(reserva.saldoPendiente.round())}',
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: Color(0xFFB91C1C),
@@ -112,15 +112,12 @@ class _ReservasScreenState extends State<ReservasScreen> {
           ),
           FilledButton(
             onPressed: () {
-              // TODO: Implementar lógica de anulación
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Reserva anulada')),
               );
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Anular'),
           ),
         ],
@@ -143,12 +140,10 @@ class _ReservasScreenState extends State<ReservasScreen> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
-                    color: Color(AppColors.text),
+                    color: AppColors.text,
                   ),
                 ),
                 const SizedBox(height: 14),
-
-                // Barra de búsqueda
                 TextField(
                   controller: _search,
                   decoration: const InputDecoration(
@@ -158,10 +153,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
                   ),
                   onChanged: _onSearch,
                 ),
-
                 const SizedBox(height: 14),
-
-                // Contenido principal
                 Expanded(
                   child: _buildContent(context, controller),
                 ),
@@ -185,11 +177,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.grey[400],
-              ),
+              Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
               const SizedBox(height: 16),
               Text(
                 controller.errorMsg,
@@ -205,9 +193,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
           ),
         ),
       ReservaStatus.listo => controller.reservas.isEmpty
-          ? const Center(
-              child: Text('No se encontraron reservas.'),
-            )
+          ? const Center(child: Text('No se encontraron reservas.'))
           : ListView.separated(
               itemCount: controller.reservas.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
@@ -215,7 +201,8 @@ class _ReservasScreenState extends State<ReservasScreen> {
                 reserva: controller.reservas[i],
                 onVerDetalle: () =>
                     _mostrarDetalle(context, controller.reservas[i]),
-                onAnular: () => _anularReserva(context, controller.reservas[i]),
+                onAnular: () =>
+                    _anularReserva(context, controller.reservas[i]),
                 onAbono: () =>
                     _mostrarDialogoAbono(context, controller.reservas[i]),
               ),
@@ -223,6 +210,10 @@ class _ReservasScreenState extends State<ReservasScreen> {
     };
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Card de reserva
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _ReservaCard extends StatelessWidget {
   final Reserva reserva;
@@ -237,31 +228,32 @@ class _ReservaCard extends StatelessWidget {
     required this.onAbono,
   });
 
-  Color _getEstadoColor() {
-    return const Color(0xFF047857); // Verde para reservas confirmadas
-  }
+  Color _getEstadoColor() => switch (reserva.estadoEnum) {
+        EstadoReserva.confirmada  => const Color(0xFF047857),
+        EstadoReserva.pendiente   => const Color(0xFFB45309),
+        EstadoReserva.anulada     => const Color(0xFFB91C1C),
+        EstadoReserva.finalizado  => const Color(0xFF1D4ED8),
+      };
 
-  String _getTipoEvento(String tipo) {
-    const tiposEvento = {
-      'BODA': '💒 Boda',
-      'CUMPLEANOS': '🎂 Cumpleaños',
-      'QUINCEANIOS': '👗 Quinceaños',
-      'FUNERAL': '⚫ Funeral',
-      'RECONCILIACION': '💕 Reconciliación',
-      'DIA_DE_MADRE': '👩 Día de Madre',
-      'AMOR': '❤️ Amor',
-      'ANIVERSARIO': '💍 Aniversario',
-      'PADRES': '👨‍👩‍👧 Padres',
-      'FIESTA': '🎉 Fiesta',
-      'OTRO': '📌 Otro',
+  String _tipoEventoLabel(String tipo) {
+    const map = {
+      'BODA': 'Boda',
+      'CUMPLEANOS': 'Cumpleaños',
+      'QUINCEANIOS': 'Quinceaños',
+      'FUNERAL': 'Funeral',
+      'RECONCILIACION': 'Reconciliación',
+      'DIA_DE_MADRE': 'Día de Madre',
+      'AMOR': 'Amor',
+      'ANIVERSARIO': 'Aniversario',
+      'PADRES': 'Padres',
+      'FIESTA': 'Fiesta',
+      'OTRO': 'Otro',
     };
-    return tiposEvento[tipo] ?? tipo;
+    return map[tipo] ?? tipo;
   }
 
   @override
   Widget build(BuildContext context) {
-    final cotizacion = reserva.cotizacion;
-
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -273,7 +265,7 @@ class _ReservaCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Botón de abono en la parte superior
+            // ── Botón abono ────────────────────────────────────────────────
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
@@ -288,7 +280,7 @@ class _ReservaCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Header con ID y estado
+            // ── ID + homenajeado + estado ───────────────────────────────────
             Row(
               children: [
                 Expanded(
@@ -300,7 +292,7 @@ class _ReservaCard extends StatelessWidget {
                           Text(
                             '#${reserva.id}',
                             style: const TextStyle(
-                              color: Color(AppColors.textMuted),
+                              color: AppColors.textMuted,
                               fontWeight: FontWeight.w800,
                               fontSize: 12,
                             ),
@@ -308,11 +300,13 @@ class _ReservaCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              cotizacion?.nombreHomenajeado ?? 'Reserva',
+                              reserva.homenajeado.isNotEmpty
+                                  ? reserva.homenajeado
+                                  : 'Reserva',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
-                                color: Color(AppColors.text),
+                                color: AppColors.text,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -324,9 +318,7 @@ class _ReservaCard extends StatelessWidget {
                       Text(
                         'Cotización #${reserva.cotizacionId}',
                         style: const TextStyle(
-                          color: Color(AppColors.textMuted),
-                          fontSize: 12,
-                        ),
+                            color: AppColors.textMuted, fontSize: 12),
                       ),
                     ],
                   ),
@@ -353,76 +345,72 @@ class _ReservaCard extends StatelessWidget {
             const Divider(height: 1),
             const SizedBox(height: 10),
 
-            // Información del evento
-            if (cotizacion != null) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Tipo de Evento',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Color(AppColors.textMuted),
-                            fontWeight: FontWeight.w700,
-                          ),
+            // ── Tipo y fecha ───────────────────────────────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Tipo de Evento',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _getTipoEvento(cotizacion.tipoEvento),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Color(AppColors.text),
-                            fontSize: 13,
-                          ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _tipoEventoLabel(reserva.tipoEvento),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.text,
+                          fontSize: 13,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Fecha del Evento',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Color(AppColors.textMuted),
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${cotizacion.fechaEvento.day}/${cotizacion.fechaEvento.month}/${cotizacion.fechaEvento.year}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Color(AppColors.text),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Ubicación: ${cotizacion.direccionEvento}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(AppColors.textMuted),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 10),
-              const Divider(height: 1),
-              const SizedBox(height: 10),
-            ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Fecha del Evento',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${reserva.fechaEvento.day}/${reserva.fechaEvento.month}/${reserva.fechaEvento.year}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.text,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Ubicación: ${reserva.ubicacion}',
+              style:
+                  const TextStyle(fontSize: 12, color: AppColors.textMuted),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
 
-            // Información financiera
+            // ── Financiero ─────────────────────────────────────────────────
             Row(
               children: [
                 Expanded(
@@ -433,18 +421,16 @@ class _ReservaCard extends StatelessWidget {
                         'Valor Total',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(AppColors.textMuted),
+                          color: AppColors.textMuted,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        reserva.totalValor != null
-                            ? formatCop(reserva.totalValor!.round())
-                            : 'No especificado',
+                        formatCop(reserva.totalValor.round()),
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
-                          color: Color(AppColors.text),
+                          color: AppColors.text,
                         ),
                       ),
                     ],
@@ -458,15 +444,13 @@ class _ReservaCard extends StatelessWidget {
                         'Saldo Pendiente',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Color(AppColors.textMuted),
+                          color: AppColors.textMuted,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        reserva.saldoPendiente != null
-                            ? formatCop(reserva.saldoPendiente!.round())
-                            : 'No especificado',
+                        formatCop(reserva.saldoPendiente.round()),
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           color: Color(0xFFB91C1C),
@@ -477,52 +461,39 @@ class _ReservaCard extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
 
-            // Información del cliente
-            if (cotizacion?.cliente != null) ...[
-              const SizedBox(height: 10),
-              const Divider(height: 1),
-              const SizedBox(height: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Cliente',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(AppColors.textMuted),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    cotizacion!.cliente!.apellido,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Color(AppColors.text),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    cotizacion.cliente!.email,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(AppColors.textMuted),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    cotizacion.cliente!.telefonoPrincipal,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(AppColors.textMuted),
-                    ),
-                  ),
-                ],
+            // ── Cliente ────────────────────────────────────────────────────
+            const Text(
+              'Cliente',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textMuted,
+                fontWeight: FontWeight.w700,
               ),
-            ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              reserva.clienteNombre,
+              style: const TextStyle(
+                  fontWeight: FontWeight.w600, color: AppColors.text),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              reserva.clienteEmail,
+              style:
+                  const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              reserva.clienteTelefono,
+              style:
+                  const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
 
-            // Botones de acción
+            // ── Acciones ───────────────────────────────────────────────────
             const SizedBox(height: 12),
             const Divider(height: 1),
             const SizedBox(height: 12),
@@ -556,6 +527,10 @@ class _ReservaCard extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Modal de detalle
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _DetalleReservaModal extends StatelessWidget {
   final Reserva reserva;
 
@@ -563,8 +538,6 @@ class _DetalleReservaModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cotizacion = reserva.cotizacion;
-
     return DraggableScrollableSheet(
       expand: false,
       builder: (context, scrollController) => SingleChildScrollView(
@@ -587,58 +560,45 @@ class _DetalleReservaModal extends StatelessWidget {
               const SizedBox(height: 20),
               const Text(
                 'Detalle de Reserva',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                ),
+                style:
+                    TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 16),
-              if (cotizacion != null) ...[
-                _buildSection('Información del Evento', [
-                  _buildRow('Homenajeado', cotizacion.nombreHomenajeado),
-                  _buildRow('Tipo', cotizacion.tipoEvento),
-                  _buildRow(
-                    'Fecha',
-                    '${cotizacion.fechaEvento.day}/${cotizacion.fechaEvento.month}/${cotizacion.fechaEvento.year}',
+              _buildSection('Información del Evento', [
+                _buildRow('Homenajeado', reserva.homenajeado),
+                _buildRow('Tipo', reserva.tipoEvento),
+                _buildRow(
+                  'Fecha',
+                  '${reserva.fechaEvento.day}/${reserva.fechaEvento.month}/${reserva.fechaEvento.year}',
+                ),
+                _buildRow(
+                    'Horario', '${reserva.horaInicio} - ${reserva.horaFin}'),
+                _buildRow('Ubicación', reserva.ubicacion),
+              ]),
+              const SizedBox(height: 16),
+              _buildSection('Información Financiera', [
+                _buildRow(
+                    'Valor Total', formatCop(reserva.totalValor.round())),
+                _buildRow('Saldo Pendiente',
+                    formatCop(reserva.saldoPendiente.round())),
+                _buildRow('Estado', reserva.estadoLabel),
+              ]),
+              const SizedBox(height: 16),
+              _buildSection('Cliente', [
+                _buildRow('Nombre', reserva.clienteNombre),
+                _buildRow('Email', reserva.clienteEmail),
+                _buildRow('Teléfono', reserva.clienteTelefono),
+              ]),
+              if (reserva.abonos.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                _buildSection('Abonos (${reserva.abonos.length})', [
+                  ...reserva.abonos.map(
+                    (a) => _buildRow(
+                      a.metodoPago,
+                      formatCop(a.monto.round()),
+                    ),
                   ),
-                  _buildRow('Ubicación', cotizacion.direccionEvento),
                 ]),
-                const SizedBox(height: 16),
-                _buildSection('Información Financiera', [
-                  _buildRow(
-                    'Valor Total',
-                    formatCop(reserva.totalValor?.round() ?? 0),
-                  ),
-                  _buildRow(
-                    'Saldo Pendiente',
-                    formatCop(reserva.saldoPendiente?.round() ?? 0),
-                  ),
-                  _buildRow('Estado', reserva.estadoLabel),
-                ]),
-                const SizedBox(height: 16),
-                if (cotizacion.cliente != null)
-                  _buildSection('Información del Cliente', [
-                    _buildRow('Nombre', cotizacion.cliente!.apellido),
-                    _buildRow('Email', cotizacion.cliente!.email),
-                    _buildRow(
-                        'Teléfono', cotizacion.cliente!.telefonoPrincipal),
-                  ]),
-                const SizedBox(height: 16),
-                if (cotizacion.repertorios.isNotEmpty)
-                  _buildSection('Repertorio', [
-                    ...cotizacion.repertorios.map((r) => _buildRow(
-                          r.titulo,
-                          '${r.artista} - ${r.genero}',
-                        )),
-                  ]),
-                const SizedBox(height: 16),
-                if (cotizacion.servicios.isNotEmpty)
-                  _buildSection('Servicios', [
-                    ...cotizacion.servicios.map((s) => _buildRow(
-                          s.nombre,
-                          '${s.cantidad}x - ${formatCop(s.precio.round())}',
-                        )),
-                  ]),
               ],
               const SizedBox(height: 20),
             ],
@@ -657,7 +617,7 @@ class _DetalleReservaModal extends StatelessWidget {
           style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Color(AppColors.textMuted),
+            color: AppColors.textMuted,
           ),
         ),
         const SizedBox(height: 8),
@@ -676,7 +636,7 @@ class _DetalleReservaModal extends StatelessWidget {
             label,
             style: const TextStyle(
               fontSize: 13,
-              color: Color(AppColors.textMuted),
+              color: AppColors.textMuted,
             ),
           ),
           Expanded(
@@ -686,7 +646,7 @@ class _DetalleReservaModal extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Color(AppColors.text),
+                color: AppColors.text,
               ),
             ),
           ),
