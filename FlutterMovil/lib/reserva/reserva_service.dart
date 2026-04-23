@@ -86,7 +86,7 @@ class ReservaService {
 
   // ── Registrar abono ────────────────────────────────────────────────────────
 
-  Future<Abono> registrarAbono(
+  Future<void> registrarAbono(
     int reservaId, {
     required double monto,
     required String metodoPago,
@@ -95,21 +95,25 @@ class ReservaService {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-  final uri = Uri.parse('${_resolveBaseUrl()}/api/reservas/$reservaId/abonos');
+    final uri = Uri.parse('${_resolveBaseUrl()}/api/reservas/$reservaId/abonos');
+
+    // El backend espera: { amount, date, method, notes }
+    final now = DateTime.now();
+    final date =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
     final body = jsonEncode({
-      'monto': monto,
-      'metodoPago': metodoPago,
-      if (notas != null && notas.isNotEmpty) 'notas': notas,
+      'amount': monto,
+      'date': date,
+      'method': metodoPago,
+      if (notas != null && notas.isNotEmpty) 'notes': notas,
     });
 
     final response = await http
         .post(uri, headers: _buildHeaders(token), body: body)
         .timeout(NetworkConfig.timeout);
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return Abono.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
-    }
+    if (response.statusCode == 200 || response.statusCode == 201) return;
 
     throw Exception(_extractErrorMessage(response));
   }
@@ -120,10 +124,10 @@ class ReservaService {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
-  final uri = Uri.parse('${_resolveBaseUrl()}/api/reservas/$id/anular');
+    final uri = Uri.parse('${_resolveBaseUrl()}/api/reservas/$id/anular');
 
     final response = await http
-        .patch(uri, headers: _buildHeaders(token))
+        .patch(uri, headers: _buildHeaders(token), body: jsonEncode({}))
         .timeout(NetworkConfig.timeout);
 
     if (response.statusCode != 200 && response.statusCode != 204) {

@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class NetworkConfig {
   static const String _localhost  = 'http://localhost:3000';
-  static const String _localIP    = 'http://192.168.18.158:3000';
+  static const String _localIP    = 'http://192.168.20.92:3000';
   static const String _emulatorIP = 'http://10.0.2.2:3000';
 
   /// URL base según plataforma

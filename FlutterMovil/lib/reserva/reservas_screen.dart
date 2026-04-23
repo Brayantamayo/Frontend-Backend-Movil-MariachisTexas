@@ -5,6 +5,7 @@ import '../core/format/currency.dart';
 import '../core/theme/app_colors.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
 import 'reserva_controller.dart';
+import 'reserva_detalle_screen.dart';
 
 class ReservasScreen extends StatefulWidget {
   const ReservasScreen({super.key});
@@ -32,95 +33,289 @@ class _ReservasScreenState extends State<ReservasScreen> {
     super.dispose();
   }
 
-  Future<void> _onSearch(String query) async {
-    await _controller.buscar(query);
+  void _onSearch(String query) {
+    _controller.buscar(query);
   }
 
-  void _mostrarDetalle(BuildContext context, Reserva reserva) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  Future<void> _showDetalle(Reserva r) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReservaDetalleScreen(reservaId: r.id),
       ),
-      builder: (context) => _DetalleReservaModal(reserva: reserva),
     );
   }
 
-  void _mostrarDialogoAbono(BuildContext context, Reserva reserva) {
-    final montoController = TextEditingController();
+  Future<void> _confirmAnular(Reserva r) async {
+    if (r.estadoEnum == EstadoReserva.anulada) return;
 
-    showDialog(
+    final ok = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Registrar Abono'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (_) => AlertDialog(
+        title: const Text('Anular Reserva'),
+        content: Text(
+          '¿Estás seguro de anular la reserva #${r.id}?\n\n'
+          'Cliente: ${r.clienteNombre}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Anular'),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true) return;
+
+    final success = await _controller.anular(r.id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'Reserva anulada exitosamente' : _controller.errorMsg,
+          ),
+          backgroundColor: success ? Colors.orange : AppColors.primary,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showAbono(Reserva r) async {
+    if (r.estadoEnum == EstadoReserva.anulada) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se puede registrar abono en una reserva anulada'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+      return;
+    }
+
+    final pagado = r.totalValor - r.saldoPendiente;
+    final esPrimerAbono = pagado == 0;
+    final anticipo50 = (r.totalValor / 2).ceilToDouble();
+    final saldo = r.saldoPendiente;
+
+    // Si ya pagó el 50%, solo puede pagar el saldo restante
+    // Si es el primer abono, puede elegir 50% o 100%
+    double? montoSeleccionado;
+    String metodo = 'EFECTIVO';
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          title: const Text('Registrar Abono'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Resumen financiero
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _abonoInfoRow('Total', formatCop(r.totalValor.round())),
+                    if (!esPrimerAbono)
+                      _abonoInfoRow('Pagado', formatCop(pagado.round()),
+                          color: const Color(0xFF047857)),
+                    _abonoInfoRow(
+                      'Saldo pendiente',
+                      formatCop(saldo.round()),
+                      color: const Color(0xFFB91C1C),
+                      bold: true,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Opciones de monto
+              if (esPrimerAbono) ...[
+                const Text(
+                  'Selecciona el monto a pagar:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _montoBtn(
+                        label: '50%',
+                        sublabel: formatCop(anticipo50.round()),
+                        selected: montoSeleccionado == anticipo50,
+                        onTap: () => setS(() => montoSeleccionado = anticipo50),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _montoBtn(
+                        label: '100%',
+                        sublabel: formatCop(saldo.round()),
+                        selected: montoSeleccionado == saldo,
+                        onTap: () => setS(() => montoSeleccionado = saldo),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                const Text(
+                  'Monto a pagar (saldo restante):',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _montoBtn(
+                  label: '100% restante',
+                  sublabel: formatCop(saldo.round()),
+                  selected: true,
+                  onTap: () => setS(() => montoSeleccionado = saldo),
+                ),
+              ],
+              const SizedBox(height: 16),
+              // Método de pago
+              DropdownButtonFormField<String>(
+                initialValue: metodo,
+                decoration: const InputDecoration(
+                  labelText: 'Método de pago',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'EFECTIVO',      child: Text('Efectivo')),
+                  DropdownMenuItem(value: 'TRANSFERENCIA', child: Text('Transferencia')),
+                  DropdownMenuItem(value: 'NEQUI',         child: Text('Nequi')),
+                  DropdownMenuItem(value: 'DAVIPLATA',     child: Text('Daviplata')),
+                  DropdownMenuItem(value: 'OTRO',          child: Text('Otro')),
+                ],
+                onChanged: (v) => setS(() => metodo = v ?? 'EFECTIVO'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+              onPressed: (montoSeleccionado != null || !esPrimerAbono)
+                  ? () => Navigator.pop(ctx, true)
+                  : null,
+              child: const Text('Registrar'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (ok != true) return;
+
+    final monto = esPrimerAbono ? montoSeleccionado! : saldo;
+
+    final success = await _controller.registrarAbono(
+      r.id,
+      monto: monto,
+      metodoPago: metodo,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'Abono registrado exitosamente' : _controller.errorMsg,
+          ),
+          backgroundColor: success ? Colors.green : AppColors.primary,
+        ),
+      );
+    }
+  }
+
+  // ── Helpers para el diálogo de abono ──────────────────────────────────────
+
+  static Widget _abonoInfoRow(String label, String value,
+      {Color? color, bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 13, color: AppColors.textMuted)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+              color: color ?? AppColors.text,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _montoBtn({
+    required String label,
+    required String sublabel,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? AppColors.primary : const Color(0xFFE2E8F0),
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
           children: [
             Text(
-              'Saldo pendiente: ${formatCop(reserva.saldoPendiente.round())}',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Color(0xFFB91C1C),
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 15,
+                color: selected ? AppColors.primary : AppColors.text,
               ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: montoController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Monto del abono',
-                hintText: 'Ingresa el monto',
-                border: OutlineInputBorder(),
+            const SizedBox(height: 2),
+            Text(
+              sublabel,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: selected ? AppColors.primary : AppColors.textMuted,
               ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () {
-              // TODO: Implementar lógica de abono
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Abono registrado')),
-              );
-            },
-            child: const Text('Registrar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _anularReserva(BuildContext context, Reserva reserva) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Anular Reserva'),
-        content: const Text(
-          '¿Estás seguro de que deseas anular esta reserva? Esta acción no se puede deshacer.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Reserva anulada')),
-              );
-            },
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Anular'),
-          ),
-        ],
       ),
     );
   }
@@ -154,9 +349,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
                   onChanged: _onSearch,
                 ),
                 const SizedBox(height: 14),
-                Expanded(
-                  child: _buildContent(context, controller),
-                ),
+                Expanded(child: _buildContent(controller)),
               ],
             ),
           ),
@@ -165,7 +358,7 @@ class _ReservasScreenState extends State<ReservasScreen> {
     );
   }
 
-  Widget _buildContent(BuildContext context, ReservaController controller) {
+  Widget _buildContent(ReservaController controller) {
     return switch (controller.status) {
       ReservaStatus.inicial => const Center(
           child: Text('Presiona el botón para cargar reservas'),
@@ -198,59 +391,48 @@ class _ReservasScreenState extends State<ReservasScreen> {
               itemCount: controller.reservas.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, i) => _ReservaCard(
-                reserva: controller.reservas[i],
-                onVerDetalle: () =>
-                    _mostrarDetalle(context, controller.reservas[i]),
-                onAnular: () =>
-                    _anularReserva(context, controller.reservas[i]),
-                onAbono: () =>
-                    _mostrarDialogoAbono(context, controller.reservas[i]),
+                r: controller.reservas[i],
+                onDetalle: () => _showDetalle(controller.reservas[i]),
+                onAnular: controller.reservas[i].estadoEnum != EstadoReserva.anulada
+                    ? () => _confirmAnular(controller.reservas[i])
+                    : null,
+                onAbono: controller.reservas[i].estadoEnum != EstadoReserva.anulada
+                    ? () => _showAbono(controller.reservas[i])
+                    : null,
               ),
             ),
     };
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Card de reserva
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── CARD ─────────────────────────────────────────────────────────────────────
 
 class _ReservaCard extends StatelessWidget {
-  final Reserva reserva;
-  final VoidCallback onVerDetalle;
-  final VoidCallback onAnular;
-  final VoidCallback onAbono;
+  final Reserva r;
+  final VoidCallback onDetalle;
+  final VoidCallback? onAnular;
+  final VoidCallback? onAbono;
 
   const _ReservaCard({
-    required this.reserva,
-    required this.onVerDetalle,
+    required this.r,
+    required this.onDetalle,
     required this.onAnular,
     required this.onAbono,
   });
 
-  Color _getEstadoColor() => switch (reserva.estadoEnum) {
-        EstadoReserva.confirmada  => const Color(0xFF047857),
-        EstadoReserva.pendiente   => const Color(0xFFB45309),
-        EstadoReserva.anulada     => const Color(0xFFB91C1C),
-        EstadoReserva.finalizado  => const Color(0xFF1D4ED8),
+  Color _pillBg() => switch (r.estadoEnum) {
+        EstadoReserva.pendiente  => const Color(0xFFFEF3C7),
+        EstadoReserva.confirmada => const Color(0xFFDCFCE7),
+        EstadoReserva.anulada    => const Color(0xFFFEE2E2),
+        EstadoReserva.finalizado => const Color(0xFFDBEAFE),
       };
 
-  String _tipoEventoLabel(String tipo) {
-    const map = {
-      'BODA': 'Boda',
-      'CUMPLEANOS': 'Cumpleaños',
-      'QUINCEANIOS': 'Quinceaños',
-      'FUNERAL': 'Funeral',
-      'RECONCILIACION': 'Reconciliación',
-      'DIA_DE_MADRE': 'Día de Madre',
-      'AMOR': 'Amor',
-      'ANIVERSARIO': 'Aniversario',
-      'PADRES': 'Padres',
-      'FIESTA': 'Fiesta',
-      'OTRO': 'Otro',
-    };
-    return map[tipo] ?? tipo;
-  }
+  Color _pillFg() => switch (r.estadoEnum) {
+        EstadoReserva.pendiente  => const Color(0xFFB45309),
+        EstadoReserva.confirmada => const Color(0xFF047857),
+        EstadoReserva.anulada    => const Color(0xFFB91C1C),
+        EstadoReserva.finalizado => const Color(0xFF1D4ED8),
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -265,22 +447,7 @@ class _ReservaCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Botón abono ────────────────────────────────────────────────
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: onAbono,
-                icon: const Icon(Icons.add_circle_outline, size: 18),
-                label: const Text('Hacer Abono'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF047857),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // ── ID + homenajeado + estado ───────────────────────────────────
+            // ── Encabezado: ID + tipo evento + estado + menú ───────────────
             Row(
               children: [
                 Expanded(
@@ -290,7 +457,7 @@ class _ReservaCard extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            '#${reserva.id}',
+                            '#${r.id}',
                             style: const TextStyle(
                               color: AppColors.textMuted,
                               fontWeight: FontWeight.w800,
@@ -300,26 +467,32 @@ class _ReservaCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              reserva.homenajeado.isNotEmpty
-                                  ? reserva.homenajeado
-                                  : 'Reserva',
+                              _tipoLabel(r.tipoEvento),
                               style: const TextStyle(
-                                fontSize: 16,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w900,
                                 color: AppColors.text,
                               ),
-                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
-                        'Cotización #${reserva.cotizacionId}',
-                        style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 12),
+                        r.clienteNombre,
+                        style: const TextStyle(color: AppColors.textMuted),
                       ),
+                      if (r.homenajeado.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Para: ${r.homenajeado}',
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -327,90 +500,92 @@ class _ReservaCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: _getEstadoColor().withValues(alpha: 0.1),
+                    color: _pillBg(),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    reserva.estadoLabel,
+                    r.estadoLabel,
                     style: TextStyle(
-                      color: _getEstadoColor(),
+                      color: _pillFg(),
                       fontWeight: FontWeight.w900,
                       fontSize: 12,
                     ),
                   ),
                 ),
+                const SizedBox(width: 8),
+                PopupMenuButton<String>(
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(
+                      value: 'detalle',
+                      child: Row(
+                        children: [
+                          Icon(Icons.visibility_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text('Ver Detalle'),
+                        ],
+                      ),
+                    ),
+                    if (onAbono != null)
+                      const PopupMenuItem(
+                        value: 'abono',
+                        child: Row(
+                          children: [
+                            Icon(Icons.payments_outlined, size: 18),
+                            SizedBox(width: 8),
+                            Text('Registrar Abono'),
+                          ],
+                        ),
+                      ),
+                    if (onAnular != null) ...[
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'anular',
+                        child: Row(
+                          children: [
+                            Icon(Icons.cancel_outlined,
+                                size: 18, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Anular',
+                                style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                  onSelected: (v) {
+                    switch (v) {
+                      case 'detalle':
+                        onDetalle();
+                      case 'abono':
+                        onAbono?.call();
+                      case 'anular':
+                        onAnular?.call();
+                    }
+                  },
+                ),
               ],
             ),
+            const SizedBox(height: 12),
+
+            // ── Info: fecha, horario, lugar ────────────────────────────────
+            Wrap(
+              spacing: 14,
+              runSpacing: 8,
+              children: [
+                _info(
+                  Icons.calendar_month_outlined,
+                  '${r.fechaEvento.day}/${r.fechaEvento.month}/${r.fechaEvento.year}',
+                ),
+                _info(Icons.schedule, '${r.horaInicio} - ${r.horaFin}'),
+                _info(Icons.place_outlined, r.ubicacion),
+              ],
+            ),
+
             const SizedBox(height: 12),
             const Divider(height: 1),
             const SizedBox(height: 10),
 
-            // ── Tipo y fecha ───────────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Tipo de Evento',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _tipoEventoLabel(reserva.tipoEvento),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.text,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Fecha del Evento',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${reserva.fechaEvento.day}/${reserva.fechaEvento.month}/${reserva.fechaEvento.year}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.text,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Ubicación: ${reserva.ubicacion}',
-              style:
-                  const TextStyle(fontSize: 12, color: AppColors.textMuted),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 10),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-
-            // ── Financiero ─────────────────────────────────────────────────
+            // ── Resumen financiero ─────────────────────────────────────────
             Row(
               children: [
                 Expanded(
@@ -427,7 +602,7 @@ class _ReservaCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        formatCop(reserva.totalValor.round()),
+                        formatCop(r.totalValor.round()),
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           color: AppColors.text,
@@ -450,72 +625,15 @@ class _ReservaCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        formatCop(reserva.saldoPendiente.round()),
-                        style: const TextStyle(
+                        formatCop(r.saldoPendiente.round()),
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFB91C1C),
+                          color: r.saldoPendiente > 0
+                              ? const Color(0xFFB91C1C)
+                              : const Color(0xFF047857),
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-
-            // ── Cliente ────────────────────────────────────────────────────
-            const Text(
-              'Cliente',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              reserva.clienteNombre,
-              style: const TextStyle(
-                  fontWeight: FontWeight.w600, color: AppColors.text),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              reserva.clienteEmail,
-              style:
-                  const TextStyle(fontSize: 12, color: AppColors.textMuted),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              reserva.clienteTelefono,
-              style:
-                  const TextStyle(fontSize: 12, color: AppColors.textMuted),
-            ),
-
-            // ── Acciones ───────────────────────────────────────────────────
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onVerDetalle,
-                    icon: const Icon(Icons.visibility_outlined, size: 18),
-                    label: const Text('Ver Detalle'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onAnular,
-                    icon: const Icon(Icons.close_outlined, size: 18),
-                    label: const Text('Anular'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
-                    ),
                   ),
                 ),
               ],
@@ -525,133 +643,39 @@ class _ReservaCard extends StatelessWidget {
       ),
     );
   }
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Modal de detalle
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _DetalleReservaModal extends StatelessWidget {
-  final Reserva reserva;
-
-  const _DetalleReservaModal({required this.reserva});
-
-  @override
-  Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
-      builder: (context, scrollController) => SingleChildScrollView(
-        controller: scrollController,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Detalle de Reserva',
-                style:
-                    TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 16),
-              _buildSection('Información del Evento', [
-                _buildRow('Homenajeado', reserva.homenajeado),
-                _buildRow('Tipo', reserva.tipoEvento),
-                _buildRow(
-                  'Fecha',
-                  '${reserva.fechaEvento.day}/${reserva.fechaEvento.month}/${reserva.fechaEvento.year}',
-                ),
-                _buildRow(
-                    'Horario', '${reserva.horaInicio} - ${reserva.horaFin}'),
-                _buildRow('Ubicación', reserva.ubicacion),
-              ]),
-              const SizedBox(height: 16),
-              _buildSection('Información Financiera', [
-                _buildRow(
-                    'Valor Total', formatCop(reserva.totalValor.round())),
-                _buildRow('Saldo Pendiente',
-                    formatCop(reserva.saldoPendiente.round())),
-                _buildRow('Estado', reserva.estadoLabel),
-              ]),
-              const SizedBox(height: 16),
-              _buildSection('Cliente', [
-                _buildRow('Nombre', reserva.clienteNombre),
-                _buildRow('Email', reserva.clienteEmail),
-                _buildRow('Teléfono', reserva.clienteTelefono),
-              ]),
-              if (reserva.abonos.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                _buildSection('Abonos (${reserva.abonos.length})', [
-                  ...reserva.abonos.map(
-                    (a) => _buildRow(
-                      a.metodoPago,
-                      formatCop(a.monto.round()),
-                    ),
-                  ),
-                ]),
-              ],
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
+  static String _tipoLabel(String tipo) {
+    const map = {
+      'BODA': 'Boda',
+      'CUMPLEANOS': 'Cumpleaños',
+      'QUINCEANIOS': 'Quinceaños',
+      'FUNERAL': 'Funeral',
+      'RECONCILIACION': 'Reconciliación',
+      'DIA_DE_MADRE': 'Día de la Madre',
+      'AMOR': 'Amor',
+      'ANIVERSARIO': 'Aniversario',
+      'PADRES': 'Día del Padre',
+      'FIESTA': 'Fiesta',
+      'OTRO': 'Otro',
+    };
+    return map[tipo] ?? tipo;
   }
 
-  Widget _buildSection(String title, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  static Widget _info(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textMuted,
+        Icon(icon, size: 16, color: AppColors.textMuted),
+        const SizedBox(width: 6),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 200),
+          child: Text(
+            text,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Color(0xFF475569)),
           ),
         ),
-        const SizedBox(height: 8),
-        ...children,
       ],
-    );
-  }
-
-  Widget _buildRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColors.textMuted,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.text,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

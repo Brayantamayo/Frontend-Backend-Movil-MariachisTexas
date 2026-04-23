@@ -6,6 +6,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
 import '../core/config/network_config.dart';
+import '../core/utils/pdf_stub.dart'
+    if (dart.library.html) '../core/utils/pdf_web.dart'
+    if (dart.library.js_interop) '../core/utils/pdf_web.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
 
 class CotizacionService {
@@ -114,8 +117,8 @@ class CotizacionService {
     if (res.statusCode != 200) throw Exception(_msg(res.body));
 
     if (kIsWeb) {
-      // En web no se puede guardar archivos directamente
-      throw Exception('Descarga de PDF no disponible en web');
+      descargarEnWeb(res.bodyBytes, 'cotizacion-$id.pdf');
+      return;
     }
 
     if (Platform.isAndroid || Platform.isIOS) {

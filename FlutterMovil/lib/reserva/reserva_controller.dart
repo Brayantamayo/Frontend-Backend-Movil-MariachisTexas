@@ -11,6 +11,7 @@ class ReservaController extends ChangeNotifier {
   String errorMsg = '';
 
   List<Reserva> _todas = [];
+  List<Reserva> _todasOriginales = [];
   List<Reserva> get reservas => _todas;
 
   String _query = '';
@@ -19,68 +20,88 @@ class ReservaController extends ChangeNotifier {
   // ── Carga inicial ──────────────────────────────────────────────────────────
 
   Future<void> cargar() async {
-    print('🔍 ReservaController: Iniciando carga de reservas');
-
     status = ReservaStatus.cargando;
     errorMsg = '';
     notifyListeners();
 
     try {
-      print('🔍 ReservaController: Llamando al servicio...');
       _todas = await _service.getReservas();
-      print(
-          '✅ ReservaController: Reservas cargadas exitosamente: ${_todas.length}');
+      _todasOriginales = List.from(_todas);
       status = ReservaStatus.listo;
     } catch (e) {
-      print('❌ ReservaController: Error al cargar reservas: $e');
       errorMsg = e.toString().replaceFirst('Exception: ', '');
       status = ReservaStatus.error;
     }
 
     notifyListeners();
-    print('🔍 ReservaController: Estado final: $status');
   }
 
   // ── Búsqueda ───────────────────────────────────────────────────────────────
 
-  Future<void> buscar(String q) async {
+  void buscar(String q) {
     _query = q;
-    notifyListeners();
-
     if (q.trim().isEmpty) {
-      await cargar();
-      return;
+      _todas = List.from(_todasOriginales);
+    } else {
+      final lower = q.toLowerCase();
+      _todas = _todasOriginales.where((r) =>
+        r.clienteNombre.toLowerCase().contains(lower) ||
+        r.homenajeado.toLowerCase().contains(lower) ||
+        r.tipoEvento.toLowerCase().contains(lower) ||
+        r.estadoLabel.toLowerCase().contains(lower),
+      ).toList();
     }
-
-    status = ReservaStatus.cargando;
-    notifyListeners();
-
-    try {
-      _todas = await _service.buscarReservas(q);
-      status = ReservaStatus.listo;
-    } catch (e) {
-      errorMsg = e.toString().replaceFirst('Exception: ', '');
-      status = ReservaStatus.error;
-    }
-
     notifyListeners();
   }
 
   // ── Obtener detalle ────────────────────────────────────────────────────────
 
   Future<Reserva?> getDetalle(int id) async {
-    print('🔍 ReservaController: Obteniendo detalle de reserva $id');
-
     try {
-      final reserva = await _service.getReservaById(id);
-      print(
-          '✅ ReservaController: Detalle obtenido exitosamente - Estado: ${reserva.estado}');
-      return reserva;
+      return await _service.getReservaById(id);
     } catch (e) {
-      print('❌ ReservaController: Error al obtener detalle: $e');
       errorMsg = e.toString().replaceFirst('Exception: ', '');
       notifyListeners();
       return null;
+    }
+  }
+
+  // ── Anular reserva ─────────────────────────────────────────────────────────
+
+  Future<bool> anular(int id) async {
+    try {
+      await _service.anularReserva(id);
+      _actualizarEstado(id, 'ANULADA');
+      return true;
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ── Registrar abono ────────────────────────────────────────────────────────
+
+  Future<bool> registrarAbono(
+    int reservaId, {
+    required double monto,
+    required String metodoPago,
+    String? notas,
+  }) async {
+    try {
+      await _service.registrarAbono(
+        reservaId,
+        monto: monto,
+        metodoPago: metodoPago,
+        notas: notas,
+      );
+      // Recargar la reserva actualizada
+      await cargar();
+      return true;
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
     }
   }
 
@@ -88,6 +109,35 @@ class ReservaController extends ChangeNotifier {
 
   void limpiarError() {
     errorMsg = '';
+    notifyListeners();
+  }
+
+  // ── Helper interno ─────────────────────────────────────────────────────────
+
+  void _actualizarEstado(int id, String nuevoEstado) {
+    for (final list in [_todas, _todasOriginales]) {
+      final idx = list.indexWhere((r) => r.id == id);
+      if (idx != -1) {
+        final r = list[idx];
+        list[idx] = Reserva(
+          id: r.id,
+          cotizacionId: r.cotizacionId,
+          estado: nuevoEstado,
+          totalValor: r.totalValor,
+          saldoPendiente: r.saldoPendiente,
+          clienteNombre: r.clienteNombre,
+          clienteEmail: r.clienteEmail,
+          clienteTelefono: r.clienteTelefono,
+          homenajeado: r.homenajeado,
+          tipoEvento: r.tipoEvento,
+          fechaEvento: r.fechaEvento,
+          horaInicio: r.horaInicio,
+          horaFin: r.horaFin,
+          ubicacion: r.ubicacion,
+          abonos: r.abonos,
+        );
+      }
+    }
     notifyListeners();
   }
 }
