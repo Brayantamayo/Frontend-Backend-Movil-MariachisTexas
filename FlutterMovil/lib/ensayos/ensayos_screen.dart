@@ -1,26 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../core/theme/app_colors.dart';
-
-enum EstadoEnsayo { pendiente, listo }
-
-class Ensayo {
-  final int id;
-  final String titulo;
-  final String fecha;
-  final String hora;
-  final String lugar;
-  EstadoEnsayo estado;
-
-  Ensayo({
-    required this.id,
-    required this.titulo,
-    required this.fecha,
-    required this.hora,
-    required this.lugar,
-    required this.estado,
-  });
-}
+import '../core/models/app_models.dart';
+import 'ensayo_controller.dart';
+import 'ensayo_detalle_screen.dart';
 
 class EnsayosScreen extends StatefulWidget {
   const EnsayosScreen({super.key});
@@ -31,12 +16,16 @@ class EnsayosScreen extends StatefulWidget {
 
 class _EnsayosScreenState extends State<EnsayosScreen> {
   final _search = TextEditingController();
+  late EnsayoController _controller;
 
-  final List<Ensayo> _items = [
-    Ensayo(id: 1, titulo: 'Ensayo General - Boda Martínez', fecha: '12/04/2026', hora: '18:00', lugar: 'Sala de Ensayos A', estado: EstadoEnsayo.listo),
-    Ensayo(id: 2, titulo: 'Práctica Nuevo Repertorio', fecha: '16/04/2026', hora: '19:00', lugar: 'Sala de Ensayos B', estado: EstadoEnsayo.pendiente),
-    Ensayo(id: 3, titulo: 'Ensayo Serenata', fecha: '18/04/2026', hora: '20:00', lugar: 'Casa de Juan', estado: EstadoEnsayo.pendiente),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _controller = context.read<EnsayoController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _controller.cargar();
+    });
+  }
 
   @override
   void dispose() {
@@ -44,127 +33,221 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
     super.dispose();
   }
 
-  List<Ensayo> get _filtered {
-    final q = _search.text.trim().toLowerCase();
-    if (q.isEmpty) return _items;
-    return _items.where((e) {
-      return e.titulo.toLowerCase().contains(q) || e.lugar.toLowerCase().contains(q);
-    }).toList();
+  void _onSearch(String query) {
+    _controller.buscar(query);
   }
 
-  void _toggle(Ensayo e) {
-    setState(() => e.estado = e.estado == EstadoEnsayo.pendiente ? EstadoEnsayo.listo : EstadoEnsayo.pendiente);
+  Future<void> _showDetalle(Ensayo e) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EnsayoDetalleScreen(ensayoId: e.id),
+      ),
+    );
   }
 
-  Future<void> _delete(Ensayo e) async {
+  Future<void> _toggleEstado(Ensayo e) async {
+    final esListo = e.estado == EstadoEnsayo.listo;
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Eliminar ensayo'),
-        content: const Text('¿Estás seguro de eliminar este ensayo?'),
+        title: Text(esListo ? 'Marcar como Pendiente' : 'Marcar como Listo'),
+        content: Text(
+          esListo
+              ? '¿Confirmas marcar el ensayo "${e.nombre}" como pendiente?'
+              : '¿Confirmas marcar el ensayo "${e.nombre}" como listo?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: (AppColors.primary)),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(esListo ? 'Marcar Pendiente' : 'Marcar Listo'),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true) return;
+
+    final success = esListo
+        ? await _controller.marcarComoPendiente(e.id)
+        : await _controller.marcarComoListo(e.id);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'Estado actualizado exitosamente' : _controller.errorMsg,
+          ),
+          backgroundColor: success ? Colors.green : AppColors.primary,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmEliminar(Ensayo e) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Eliminar Ensayo'),
+        content: Text(
+          '¿Estás seguro de eliminar el ensayo "${e.nombre}"?\n\n'
+          'Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Eliminar'),
           ),
         ],
       ),
     );
-    if (ok != true) return;
-    setState(() => _items.removeWhere((x) => x.id == e.id));
-  }
 
-  Future<void> _detalle(Ensayo e) async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Detalle del Ensayo'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _kv('Título', e.titulo),
-            _kv('Fecha', e.fecha),
-            _kv('Hora', e.hora),
-            _kv('Lugar', e.lugar),
-            _kv('Estado', e.estado.name),
-          ],
+    if (ok != true) return;
+
+    final success = await _controller.eliminar(e.id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success ? 'Ensayo eliminado exitosamente' : _controller.errorMsg,
+          ),
+          backgroundColor: success ? Colors.red : AppColors.primary,
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
-        ],
-      ),
-    );
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = _filtered;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Ensayos',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color:(AppColors.text)),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: _search,
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.search),
-              hintText: 'Buscar ensayo...',
-              border: OutlineInputBorder(),
-            ),
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: 14),
-          Expanded(
-            child: items.isEmpty
-                ? const Center(child: Text('No se encontraron ensayos.'))
-                : ListView.separated(
-                    itemCount: items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (_, i) => _EnsayoCard(
-                      e: items[i],
-                      onDetalle: () => _detalle(items[i]),
-                      onToggle: () => _toggle(items[i]),
-                      onDelete: () => _delete(items[i]),
-                    ),
+    return Consumer<EnsayoController>(
+      builder: (context, controller, _) {
+        return Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Ensayos',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.text,
                   ),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: _search,
+                  decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.search),
+                    hintText: 'Buscar ensayo...',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: _onSearch,
+                ),
+                const SizedBox(height: 14),
+                Expanded(child: _buildContent(controller)),
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
+
+  Widget _buildContent(EnsayoController controller) {
+    return switch (controller.status) {
+      EnsayoStatus.inicial => const Center(
+          child: Text('Presiona el botón para cargar ensayos'),
+        ),
+      EnsayoStatus.cargando => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      EnsayoStatus.error => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              Text(
+                controller.errorMsg,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: controller.cargar,
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      EnsayoStatus.listo => controller.ensayos.isEmpty
+          ? const Center(child: Text('No se encontraron ensayos.'))
+          : ListView.separated(
+              itemCount: controller.ensayos.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, i) => _EnsayoCard(
+                e: controller.ensayos[i],
+                onDetalle: () => _showDetalle(controller.ensayos[i]),
+                onToggle: () => _toggleEstado(controller.ensayos[i]),
+                onEliminar: () => _confirmEliminar(controller.ensayos[i]),
+              ),
+            ),
+    };
+  }
 }
+
+// ─── CARD ─────────────────────────────────────────────────────────────────────
 
 class _EnsayoCard extends StatelessWidget {
   final Ensayo e;
   final VoidCallback onDetalle;
   final VoidCallback onToggle;
-  final VoidCallback onDelete;
+  final VoidCallback onEliminar;
 
   const _EnsayoCard({
     required this.e,
     required this.onDetalle,
     required this.onToggle,
-    required this.onDelete,
+    required this.onEliminar,
   });
+
+  Color _pillBg() {
+    return e.estado == EstadoEnsayo.listo
+        ? const Color(0xFFDCFCE7)
+        : const Color(0xFFFEF3C7);
+  }
+
+  Color _pillFg() {
+    return e.estado == EstadoEnsayo.listo
+        ? const Color(0xFF047857)
+        : const Color(0xFFB45309);
+  }
 
   @override
   Widget build(BuildContext context) {
     final listo = e.estado == EstadoEnsayo.listo;
-    final bg = listo ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7);
-    final fg = listo ? const Color(0xFF047857) : const Color(0xFFB45309);
+    final fechaFormato = DateFormat('dd/MM/yyyy').format(e.fechaHora);
+    final horaFormato = DateFormat('HH:mm').format(e.fechaHora);
 
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: Color(0xFFE2E8F0))),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -172,58 +255,197 @@ class _EnsayoCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-                  child: Icon(Icons.mic, color: fg),
-                ),
-                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        children: [
+                          Text(
+                            '#${e.id}',
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              e.nombre,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: listo
+                                    ? AppColors.textMuted
+                                    : AppColors.text,
+                                decoration: listo
+                                    ? TextDecoration.lineThrough
+                                    : TextDecoration.none,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
                       Text(
-                        e.titulo,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: listo ? (AppColors.textMuted) : (AppColors.text),
-                          decoration: listo ? TextDecoration.lineThrough : TextDecoration.none,
+                        e.lugar,
+                        style: const TextStyle(color: AppColors.textMuted),
+                      ),
+                      if (e.repertorios.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '${e.repertorios.length} canción${e.repertorios.length != 1 ? 'es' : ''}',
+                          style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-                        child: Text(e.estado.name, style: TextStyle(color: fg, fontWeight: FontWeight.w900, fontSize: 12)),
-                      ),
+                      ],
                     ],
                   ),
                 ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _pillBg(),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    e.estadoLabel.toUpperCase(),
+                    style: TextStyle(
+                      color: _pillFg(),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 PopupMenuButton<String>(
                   itemBuilder: (_) => [
-                    const PopupMenuItem(value: 'detalle', child: Text('Ver Detalle')),
-                    if (!listo) const PopupMenuItem(value: 'listo', child: Text('Marcar como listo')),
+                    const PopupMenuItem(
+                      value: 'detalle',
+                      child: Row(
+                        children: [
+                          Icon(Icons.visibility_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text('Ver Detalle'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'toggle',
+                      child: Row(
+                        children: [
+                          Icon(
+                            listo
+                                ? Icons.pending_outlined
+                                : Icons.check_circle_outline,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(listo
+                              ? 'Marcar como Pendiente'
+                              : 'Marcar como Listo'),
+                        ],
+                      ),
+                    ),
                     const PopupMenuDivider(),
-                    const PopupMenuItem(value: 'delete', child: Text('Eliminar')),
+                    const PopupMenuItem(
+                      value: 'eliminar',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline,
+                              size: 18, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Eliminar',
+                              style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
                   ],
                   onSelected: (v) {
-                    if (v == 'detalle') onDetalle();
-                    if (v == 'listo') onToggle();
-                    if (v == 'delete') onDelete();
+                    switch (v) {
+                      case 'detalle':
+                        onDetalle();
+                      case 'toggle':
+                        onToggle();
+                      case 'eliminar':
+                        onEliminar();
+                    }
                   },
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
+
             Wrap(
               spacing: 14,
               runSpacing: 8,
               children: [
-                _info(Icons.calendar_month_outlined, e.fecha),
-                _info(Icons.schedule, e.hora),
+                _info(Icons.calendar_month_outlined, fechaFormato),
+                _info(Icons.schedule, horaFormato),
                 _info(Icons.place_outlined, e.lugar),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Fecha y Hora',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$fechaFormato a las $horaFormato',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Repertorio',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        e.repertorios.isEmpty
+                            ? 'Sin canciones'
+                            : '${e.repertorios.length} canción${e.repertorios.length != 1 ? 'es' : ''}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ],
@@ -236,28 +458,17 @@ class _EnsayoCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: (AppColors.textMuted)),
+        Icon(icon, size: 16, color: AppColors.textMuted),
         const SizedBox(width: 6),
         ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 240),
-          child: Text(text, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Color(0xFF475569))),
+          constraints: const BoxConstraints(maxWidth: 200),
+          child: Text(
+            text,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Color(0xFF475569)),
+          ),
         ),
       ],
     );
   }
 }
-
-Widget _kv(String k, String v) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(k, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: (AppColors.textMuted))),
-        const SizedBox(height: 2),
-        Text(v, style: const TextStyle(fontWeight: FontWeight.w600)),
-      ],
-    ),
-  );
-}
-

@@ -23,7 +23,7 @@ class Environment {
   // Entornos disponibles
   static const dev = Environment(
     name: 'development',
-    apiUrl: 'http://localhost:3000',
+    apiUrl: 'http://192.168.18.158:3000', // Tu IP local para dispositivo físico
     apiVersion: 'api',
   );
 

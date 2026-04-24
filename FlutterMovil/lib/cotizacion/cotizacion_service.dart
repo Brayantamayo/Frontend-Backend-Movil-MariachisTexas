@@ -5,6 +5,9 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/config/env.dart';
 import '../core/config/network_config.dart';
+import '../core/utils/pdf_stub.dart'
+    if (dart.library.html) '../core/utils/pdf_web.dart'
+    if (dart.library.js_interop) '../core/utils/pdf_web.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_file/open_file.dart';
@@ -174,6 +177,11 @@ class CotizacionService {
 
       if (response.statusCode == 200) {
         final bytes = response.bodyBytes;
+
+        if (kIsWeb) {
+          descargarEnWeb(bytes, 'cotizacion-$id.pdf');
+          return;
+        }
 
         if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
           // En móvil, guardar y abrir
