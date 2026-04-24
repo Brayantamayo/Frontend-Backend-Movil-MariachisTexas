@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../app/app_controller.dart';
-import '../auth/auth_controller.dart';
-import '../core/theme/app_colors.dart';
-import '../auth/login_screen.dart';
-import 'screens/shell_screen.dart';
-import 'widgets/splash_screen.dart';
+import 'app_controller.dart';
+import '../../auth/auth_controller.dart';
+import '../../core/theme/app_colors.dart';
+import '../../auth/login_screen.dart';
+import '../../ui/screens/shell_screen.dart';
+import '../../ui/widgets/splash_screen.dart';
 
 class AppRoot extends StatelessWidget {
   const AppRoot({super.key});
@@ -14,7 +14,7 @@ class AppRoot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = ColorScheme.fromSeed(
-      seedColor: const Color(AppColors.primary),
+      seedColor: (AppColors.primary),
       brightness: Brightness.light,
     );
 
@@ -23,10 +23,10 @@ class AppRoot extends StatelessWidget {
       title: 'Mariachi Admin',
       theme: ThemeData(
         colorScheme: scheme.copyWith(
-          primary: const Color(AppColors.primary),
-          surface: const Color(AppColors.surface),
+          primary: (AppColors.primary),
+          surface: (AppColors.surface),
         ),
-        scaffoldBackgroundColor: const Color(AppColors.background),
+        scaffoldBackgroundColor: (AppColors.background),
         useMaterial3: true,
       ),
       home: Consumer2<AppController, AuthController>(

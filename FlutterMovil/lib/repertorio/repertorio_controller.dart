@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'cancion.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import 'repertorio_service.dart';
 
 enum RepertorioStatus { inicial, cargando, listo, error }
@@ -72,18 +72,18 @@ class RepertorioController extends ChangeNotifier {
   // ── Toggle activa / inactiva ──────────────────────────────────────────────
 
   Future<void> toggle(int id) async {
-    try {
-      final actualizada = await _service.toggleCancion(id);
-      final idx = _todas.indexWhere((c) => c.id == id);
-      if (idx != -1) {
-        _todas[idx].activa = actualizada.activa;
-        notifyListeners();
-      }
-    } catch (e) {
-      errorMsg = e.toString().replaceFirst('Exception: ', '');
+  try {
+    final actualizada = await _service.toggleCancion(id);
+    final idx = _todas.indexWhere((c) => c.id == id);
+    if (idx != -1) {
+      _todas[idx] = _todas[idx].copyWith(activa: actualizada.activa); 
       notifyListeners();
     }
+  } catch (e) {
+    errorMsg = e.toString().replaceFirst('Exception: ', '');
+    notifyListeners();
   }
+}
 
   // ── Eliminar ───────────────────────────────────────────────────────────────
 

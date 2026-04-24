@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/theme/app_colors.dart';
-import 'cancion.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import 'repertorio_controller.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -55,8 +55,8 @@ class _RepertorioScreenState extends State<RepertorioScreen> {
     _subs.add(p.onPlayerComplete.listen((_) {
       if (mounted)
         setState(() {
-          _playingId = null;
-          _position = Duration.zero;
+        _playingId = null;
+        _position = Duration.zero;
         });
     }));
   }
@@ -198,7 +198,7 @@ class _Header extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(AppColors.primary),
+                  color: (AppColors.primary),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.queue_music,
@@ -296,13 +296,13 @@ class _MiniPlayer extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(AppColors.primary), Color(0xFFE53E3E)],
+        gradient: LinearGradient(
+          colors: [AppColors.primary, const Color(0xFFE53E3E)],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: const Color(AppColors.primary).withOpacity(0.4),
+              color: (AppColors.primary).withOpacity(0.4),
               blurRadius: 16,
               offset: const Offset(0, 6))
         ],
@@ -434,7 +434,7 @@ class _Body extends StatelessWidget {
 
     if (ctrl.status == RepertorioStatus.cargando) {
       return const Center(
-          child: CircularProgressIndicator(color: Color(AppColors.primary)));
+          child: CircularProgressIndicator(color: AppColors.primary));
     }
 
     if (ctrl.status == RepertorioStatus.error) {
@@ -454,7 +454,7 @@ class _Body extends StatelessWidget {
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
               style: FilledButton.styleFrom(
-                  backgroundColor: const Color(AppColors.primary)),
+                  backgroundColor: AppColors.primary),
             ),
           ],
         ),
@@ -528,14 +528,14 @@ class _CancionCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isActive
-                ? const Color(AppColors.primary).withOpacity(0.4)
+                ? (AppColors.primary).withOpacity(0.4)
                 : const Color(0xFFF1F5F9),
             width: isActive ? 1.5 : 1,
           ),
           boxShadow: [
             BoxShadow(
               color: isActive
-                  ? const Color(AppColors.primary).withOpacity(0.12)
+                  ? (AppColors.primary).withOpacity(0.12)
                   : Colors.black.withOpacity(0.04),
               blurRadius: isActive ? 16 : 8,
               offset: const Offset(0, 4),
@@ -576,7 +576,7 @@ class _CancionCard extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
                         color: isActive
-                            ? const Color(AppColors.primary)
+                            ? (AppColors.primary)
                             : const Color(0xFF1A1A2E),
                       ),
                     ),
@@ -614,15 +614,15 @@ class _CancionCard extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       color: isPlaying
-                          ? const Color(AppColors.primary)
-                          : const Color(AppColors.primary).withOpacity(0.1),
+                          ? (AppColors.primary)
+                          : (AppColors.primary).withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       isPlaying ? Icons.pause : Icons.play_arrow,
                       color: isPlaying
                           ? Colors.white
-                          : const Color(AppColors.primary),
+                          : (AppColors.primary),
                       size: 22,
                     ),
                   ),
@@ -647,7 +647,7 @@ class _CancionCard extends StatelessWidget {
           ),
         ),
         child: const Icon(Icons.music_note,
-            color: Color(AppColors.primary), size: 28),
+            color: (AppColors.primary), size: 28),
       );
 
   static Widget _chip(String text) => Container(
@@ -791,7 +791,7 @@ class _DetalleDialog extends StatelessWidget {
                       child: TextButton(
                         onPressed: () => Navigator.pop(context),
                         style: TextButton.styleFrom(
-                          foregroundColor: const Color(AppColors.primary),
+                          foregroundColor: (AppColors.primary),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
@@ -817,7 +817,7 @@ class _DetalleDialog extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(AppColors.primary), Color(0xFFE53E3E)],
+            colors: [AppColors.primary, Color(0xFFE53E3E)],
           ),
         ),
         child: const Center(
@@ -833,7 +833,7 @@ class _DetalleDialog extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 13, color: const Color(AppColors.primary)),
+            Icon(icon, size: 13, color: (AppColors.primary)),
             const SizedBox(width: 5),
             Text(label,
                 style: const TextStyle(

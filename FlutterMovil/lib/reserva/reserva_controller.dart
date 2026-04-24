@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'reserva.model.dart';
+import 'package:mariachi_admin/core/models/app_models.dart';
 import 'reserva_service.dart';
 
 enum ReservaStatus { inicial, cargando, listo, error }
