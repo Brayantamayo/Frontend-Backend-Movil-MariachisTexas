@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../core/config/env.dart';
 import '../core/config/network_config.dart';
 import '../core/models/app_models.dart';
 
@@ -21,14 +22,12 @@ class EnsayoService {
     }
   }
 
-  // ── GET todas los ensayos ─────────────────────────────────────────────────
   Future<List<Ensayo>> getEnsayos() async {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
     final res = await http
-        .get(Uri.parse('${NetworkConfig.baseUrl}/api/ensayos'),
-            headers: _headers(token))
+        .get(Uri.parse(Env.endpoint('ensayos')), headers: _headers(token))
         .timeout(NetworkConfig.timeout);
 
     if (res.statusCode == 200) {
@@ -40,14 +39,12 @@ class EnsayoService {
     throw Exception(_msg(res.body));
   }
 
-  // ── GET por ID ────────────────────────────────────────────────────────────
   Future<Ensayo> getEnsayoById(int id) async {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
     final res = await http
-        .get(Uri.parse('${NetworkConfig.baseUrl}/api/ensayos/$id'),
-            headers: _headers(token))
+        .get(Uri.parse(Env.endpoint('ensayos/$id')), headers: _headers(token))
         .timeout(NetworkConfig.timeout);
 
     if (res.statusCode == 200) {
@@ -56,26 +53,24 @@ class EnsayoService {
     throw Exception(_msg(res.body));
   }
 
-  // ── PATCH toggle estado (pendiente ↔ listo) ──────────────────────────────
   Future<void> toggleEstado(int id) async {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
     final res = await http
-        .patch(Uri.parse('${NetworkConfig.baseUrl}/api/ensayos/$id/toggle-estado'),
+        .patch(Uri.parse(Env.endpoint('ensayos/$id/toggle-estado')),
             headers: _headers(token))
         .timeout(NetworkConfig.timeout);
 
     if (res.statusCode != 200) throw Exception(_msg(res.body));
   }
 
-  // ── DELETE ────────────────────────────────────────────────────────────────
   Future<void> eliminarEnsayo(int id) async {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
     final res = await http
-        .delete(Uri.parse('${NetworkConfig.baseUrl}/api/ensayos/$id'),
+        .delete(Uri.parse(Env.endpoint('ensayos/$id')),
             headers: _headers(token))
         .timeout(NetworkConfig.timeout);
 

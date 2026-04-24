@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/config/env.dart';
@@ -17,7 +18,11 @@ class CotizacionService {
 
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('token');
+    final fromPrefs = prefs.getString('token');
+    if (fromPrefs != null) return fromPrefs;
+    // fallback a secure storage
+    const storage = FlutterSecureStorage();
+    return storage.read(key: 'token');
   }
 
   // ── Obtener todas las cotizaciones ─────────────────────────────────────────
@@ -107,13 +112,14 @@ class CotizacionService {
 
     try {
       final response = await http
-          .post(uri, headers: NetworkConfig.authHeaders(token))
+          .patch(uri, headers: NetworkConfig.authHeaders(token))
           .timeout(NetworkConfig.timeout);
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
-        throw Exception('Error al convertir a reserva');
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        throw Exception(body['message'] ?? 'Error al convertir a reserva');
       }
     } catch (e) {
       rethrow;

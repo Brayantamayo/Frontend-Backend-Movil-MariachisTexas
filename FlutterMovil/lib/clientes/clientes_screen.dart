@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:mariachi_admin/clientes/clientes_controller.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
 import '../core/theme/app_colors.dart';
+import 'cliente_detalle_screen.dart';
 
 class ClientesScreen extends StatefulWidget {
   const ClientesScreen({super.key});
@@ -81,7 +82,16 @@ class _ClientesScreenState extends State<ClientesScreen> {
                                 const SizedBox(height: 12),
                             itemBuilder: (_, i) {
                               final c = items[i];
-                              return _ClienteCard(c: c);
+                              return _ClienteCard(
+                                c: c,
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        ClienteDetalleScreen(cliente: c),
+                                  ),
+                                ),
+                              );
                             },
                           ),
           ),
@@ -93,7 +103,8 @@ class _ClientesScreenState extends State<ClientesScreen> {
 
 class _ClienteCard extends StatelessWidget {
   final Cliente c;
-  const _ClienteCard({required this.c});
+  final VoidCallback onTap;
+  const _ClienteCard({required this.c, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -103,55 +114,66 @@ class _ClienteCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         side: const BorderSide(color: Color(0xFFE2E8F0)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                color: Color(0xFFFEF2F2),
-                shape: BoxShape.circle,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFEF2F2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.person, color: (AppColors.primary)),
               ),
-              child: const Icon(Icons.person, color: (AppColors.primary)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    c.nombreCompleto,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w900, color: (AppColors.text)),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.phone,
-                          size: 14, color: (AppColors.textMuted)),
-                      const SizedBox(width: 6),
-                      Text(c.telefonoPrincipal ?? 'Sin teléfono',
-                          style: const TextStyle(color: (AppColors.textMuted))),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      const Icon(Icons.email,
-                          size: 14, color: (AppColors.textMuted)),
-                      const SizedBox(width: 6),
-                      Text(c.email ?? 'Sin email',
-                          style: const TextStyle(
-                              color: (AppColors.textMuted), fontSize: 12)),
-                    ],
-                  ),
-                ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      c.nombreCompleto,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w900, color: (AppColors.text)),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone,
+                            size: 14, color: (AppColors.textMuted)),
+                        const SizedBox(width: 6),
+                        Text(c.telefonoPrincipal ?? 'Sin teléfono',
+                            style:
+                                const TextStyle(color: (AppColors.textMuted))),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        const Icon(Icons.email,
+                            size: 14, color: (AppColors.textMuted)),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            c.email ?? 'Sin email',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: (AppColors.textMuted), fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+            ],
+          ),
         ),
       ),
     );

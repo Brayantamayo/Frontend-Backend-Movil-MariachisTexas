@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../core/config/env.dart';
 import '../core/config/network_config.dart';
 
 class AuthService {
@@ -10,13 +11,15 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final uri = Uri.parse('${NetworkConfig.baseUrl}/api/auth/login');
+    final uri = Uri.parse(Env.endpoint('auth/login'));
 
-    final response = await http.post(
-      uri,
-      headers: NetworkConfig.commonHeaders,
-      body: jsonEncode({'email': email, 'password': password}),
-    ).timeout(NetworkConfig.timeout);
+    final response = await http
+        .post(
+          uri,
+          headers: NetworkConfig.commonHeaders,
+          body: jsonEncode({'email': email, 'password': password}),
+        )
+        .timeout(NetworkConfig.timeout);
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
 

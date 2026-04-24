@@ -17,11 +17,11 @@ class AuthUser {
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
-  id:     json['id']     as int,
-  nombre: json['nombre'] as String,
-  email:  json['email']  as String,
-  rolId:  json['rolId'] != null ? json['rolId'] as int : 0, // seguro
-);
+        id: json['id'] as int,
+        nombre: json['nombre'] as String,
+        email: json['email'] as String,
+        rolId: json['rolId'] != null ? json['rolId'] as int : 0, // seguro
+      );
 
   bool get isAdmin => rolId == 1;
 }
@@ -55,7 +55,10 @@ class AuthController extends ChangeNotifier {
     try {
       final result = await _service.login(email: email, password: password);
       _token = result['token'] as String;
-      _user = AuthUser.fromJson(result['usuario'] as Map<String, dynamic>);
+      // Soporta tanto 'usuario' como 'user' según el backend
+      final userData =
+          (result['usuario'] ?? result['user']) as Map<String, dynamic>;
+      _user = AuthUser.fromJson(userData);
       _isAuthenticated = true;
       notifyListeners();
       return true;
@@ -69,7 +72,7 @@ class AuthController extends ChangeNotifier {
   Future<void> logout() async {
     await _service.clearToken();
     _isAuthenticated = false;
-    _user  = null;
+    _user = null;
     _token = null;
     _lastError = null;
     notifyListeners();

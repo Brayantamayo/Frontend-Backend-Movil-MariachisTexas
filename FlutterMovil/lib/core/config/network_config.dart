@@ -1,16 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'environment.dart';
 
 class NetworkConfig {
-  // URLs para diferentes entornos
-  static const String _localhost = 'http://localhost:3000';
-  static const String _localIP = 'http://192.168.18.158:3000'; // Tu IP local
-
-  /// URL base según plataforma
-  static String get baseUrl {
-    if (kIsWeb) return _localhost; // Flutter Web
-    return _localIP; // Dispositivo físico en tu red
-  }
+  /// URL base — siempre viene de Environment
+  static String get baseUrl => Environment.current.apiUrl;
 
   static const Duration timeout = Duration(seconds: 10);
 
@@ -24,7 +17,6 @@ class NetworkConfig {
         'Authorization': 'Bearer $token',
       };
 
-  // Útil para debug, puedes quitarlo en producción
   static Future<bool> checkConnection() async {
     try {
       final response = await http

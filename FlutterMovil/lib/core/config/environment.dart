@@ -1,13 +1,6 @@
 library;
 
-/// Configuración de entorno para la API
-///
-/// Usa este archivo para cambiar entre:
-/// - desarrollo (localhost)
-/// - staging
-/// - producción
-///
-/// CAMBIA LA VARIABLE "current" PARA PROBAR DIFERENTES ENTORNOS
+import 'package:flutter/foundation.dart';
 
 class Environment {
   final String name;
@@ -20,27 +13,24 @@ class Environment {
     required this.apiVersion,
   });
 
-  // Entornos disponibles
-  static const dev = Environment(
-    name: 'development',
-    apiUrl: 'http://192.168.18.158:3000', // Tu IP local para dispositivo físico
-    apiVersion: 'api',
-  );
+  // ⚠️ Cambia _localIP por tu IP si usas dispositivo físico
+  static const String _localIP = 'http://192.168.18.158:3000';
+  static const String _localhost = 'http://localhost:3000';
 
-  static const staging = Environment(
-    name: 'staging',
-    apiUrl: 'http://tu-servidor-staging:puerto',
-    apiVersion: 'api',
-  );
+  /// Detecta automáticamente la URL según la plataforma
+  static Environment get current => const Environment(
+        name: 'development',
+        apiUrl: kIsWeb
+            ? _localhost // Chrome / web
+            : _localIP, // Dispositivo físico (cambia a _emulator si usas emulador)
+        apiVersion: 'api',
+      );
 
   static const prod = Environment(
     name: 'production',
     apiUrl: 'https://api.tudominio.com',
     apiVersion: 'v1',
   );
-
-  // ⚠️ CAMBIA AQUÍ EL ENTORNO ACTUAL
-  static Environment get current => dev;
 }
 
 // Alias para compatibilidad
