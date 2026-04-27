@@ -444,7 +444,7 @@ class _NavItemState extends State<_NavItem>
                       size: 22,
                       color: widget.selected
                           ? widget.primary
-                          : const Color(0xFFADB5BD),
+                          : const Color.fromARGB(255, 114, 96, 96),
                     ),
                   );
                 },

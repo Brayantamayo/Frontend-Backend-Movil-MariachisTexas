@@ -26,9 +26,9 @@ class _LoginScreenState extends State<LoginScreen>
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fade;
 
-  static const _bg = Color(0xFF1A0505);
-  static const _bgDeep = Color(0xFF2D0B0B);
-  static const _red = Color(0xFFC0392B);
+  static const _bg = Color.fromARGB(255, 109, 9, 9);
+  static const _red = Color(0xFFE53935);
+  static const _green = Color(0xFF4CAF50);
 
   @override
   void initState() {
@@ -127,18 +127,17 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color.fromARGB(255, 31, 9, 9),
         borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: const Color.fromARGB(255, 37, 7, 7),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: _red.withOpacity(0.35),
-            blurRadius: 60,
-            offset: const Offset(0, 24),
-          ),
-          BoxShadow(
-            color: _red.withOpacity(0.12),
-            blurRadius: 0,
-            spreadRadius: 1,
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 40,
+            offset: const Offset(0, 20),
           ),
         ],
       ),
@@ -159,15 +158,10 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildHeader() {
     return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_bg, _bgDeep, Color(0xFF3A0F0F)],
-          stops: [0.0, 0.6, 1.0],
-        ),
+      decoration: const BoxDecoration(
+        color: Color.fromARGB(255, 26, 4, 4),
         border: Border(
-          bottom: BorderSide(color: _red.withOpacity(0.25), width: 1),
+          bottom: BorderSide(color: Color(0xFF3A3A3A), width: 1),
         ),
       ),
       padding: const EdgeInsets.fromLTRB(28, 32, 28, 26),
@@ -184,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen>
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: _red.withOpacity(0.25),
+                    color: const Color.fromARGB(255, 34, 5, 5),
                     width: 1,
                   ),
                 ),
@@ -195,16 +189,16 @@ class _LoginScreenState extends State<LoginScreen>
                 height: 72,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: _red.withOpacity(0.55), width: 1.5),
+                  border:
+                      Border.all(color: const Color(0xFF4A4A4A), width: 1.5),
                 ),
               ),
               // Ícono
               Container(
-                width: 56,
-                height: 56,
+                width: 70,
+                height: 70,
                 decoration: const BoxDecoration(
-                  color:
-                      _red, // fondo rojo se mantiene si tu logo es transparente
+                  color: Color.fromARGB(255, 8, 1, 1),
                   shape: BoxShape.circle,
                 ),
                 child: ClipOval(
@@ -212,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen>
                     'assets/images/Logo.png',
                     width: 56,
                     height: 56,
-                    fit: BoxFit.cover, // o BoxFit.contain si no quieres recorte
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
@@ -222,7 +216,7 @@ class _LoginScreenState extends State<LoginScreen>
           const SizedBox(height: 16),
 
           Text(
-            'Mariachi Admin',
+            'BIENVENIDO',
             style: GoogleFonts.playfairDisplay(
               fontSize: 26,
               fontWeight: FontWeight.w900,
@@ -234,11 +228,11 @@ class _LoginScreenState extends State<LoginScreen>
           const SizedBox(height: 5),
 
           Text(
-            'PANEL DE GESTIÓN',
+            'INGRESA TUS CREDENCIALES',
             style: GoogleFonts.dmSans(
               fontSize: 10,
               fontWeight: FontWeight.w500,
-              color: _red,
+              color: const Color(0xFF888888),
               letterSpacing: 3.5,
             ),
           ),
@@ -264,7 +258,7 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _ornLine() => Container(
         width: 60,
         height: 1,
-        color: _red.withOpacity(0.3),
+        color: const Color(0xFF3A3A3A),
       );
 
   Widget _ornDiamond() => Transform.rotate(
@@ -272,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen>
         child: Container(
           width: 7,
           height: 7,
-          color: _red.withOpacity(0.7),
+          color: const Color(0xFF4A4A4A),
         ),
       );
 
@@ -280,7 +274,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   Widget _buildBody() {
     return Container(
-      color: Colors.white,
+      color: const Color.fromARGB(255, 29, 5, 5),
       padding: const EdgeInsets.fromLTRB(28, 26, 28, 32),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -297,6 +291,7 @@ class _LoginScreenState extends State<LoginScreen>
             icon: Icons.mail_outline_rounded,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.next,
+            labelColor: _green,
           ),
 
           const SizedBox(height: 16),
@@ -308,6 +303,7 @@ class _LoginScreenState extends State<LoginScreen>
             icon: Icons.lock_outline_rounded,
             obscure: !_pwVisible,
             textInputAction: TextInputAction.done,
+            labelColor: _red,
             suffix: GestureDetector(
               onTap: () => setState(() => _pwVisible = !_pwVisible),
               child: Icon(
@@ -315,7 +311,7 @@ class _LoginScreenState extends State<LoginScreen>
                     ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
                 size: 18,
-                color: const Color(0xFFCDB8B8),
+                color: const Color(0xFF666666),
               ),
             ),
             onSubmitted: (_) => _canSubmit ? _submit() : null,
@@ -338,9 +334,9 @@ class _LoginScreenState extends State<LoginScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
+                  color: const Color(0xFF3A1A1A),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFFEE2E2)),
+                  border: Border.all(color: const Color(0xFF5A2A2A)),
                 ),
                 child: Text(
                   _error!,
@@ -401,8 +397,8 @@ class _LoginScreenState extends State<LoginScreen>
                 : FilledButton(
                     onPressed: null,
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFE8C5C5),
-                      disabledBackgroundColor: const Color(0xFFE8C5C5),
+                      backgroundColor: const Color(0xFF666666),
+                      disabledBackgroundColor: const Color(0xFF666666),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15),
                       ),
@@ -416,19 +412,19 @@ class _LoginScreenState extends State<LoginScreen>
           // Divisor
           Row(
             children: [
-              const Expanded(child: Divider(color: Color(0xFFEEE5E5))),
+              const Expanded(child: Divider(color: Color(0xFF3A3A3A))),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
-                  'ACCESO SEGURO',
+                  '..................',
                   style: GoogleFonts.dmSans(
-                    fontSize: 10,
-                    color: const Color(0xFFCCC0C0),
-                    letterSpacing: 1.2,
+                    fontSize: 11,
+                    color: _green,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
-              const Expanded(child: Divider(color: Color(0xFFEEE5E5))),
+              const Expanded(child: Divider(color: Color(0xFF3A3A3A))),
             ],
           ),
 
@@ -438,13 +434,13 @@ class _LoginScreenState extends State<LoginScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.shield_outlined,
-                  size: 12, color: Color(0xFFB8A8A8)),
+                  size: 12, color: Color(0xFF666666)),
               const SizedBox(width: 6),
               Text(
                 'Conexión cifrada SSL · Solo administradores',
                 style: GoogleFonts.dmSans(
                   fontSize: 11,
-                  color: const Color(0xFFB8A8A8),
+                  color: const Color(0xFF666666),
                 ),
               ),
             ],
@@ -494,7 +490,7 @@ class _LoginScreenState extends State<LoginScreen>
           margin: const EdgeInsets.symmetric(horizontal: 3),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: active ? _red.withOpacity(0.7) : _red.withOpacity(0.18),
+            color: active ? const Color(0xFF4A4A4A) : const Color(0xFF3A3A3A),
           ),
         );
       }),
@@ -511,6 +507,7 @@ class _LoginScreenState extends State<LoginScreen>
     TextInputAction? textInputAction,
     Widget? suffix,
     void Function(String)? onSubmitted,
+    Color? labelColor,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,7 +517,7 @@ class _LoginScreenState extends State<LoginScreen>
           style: GoogleFonts.dmSans(
             fontSize: 10,
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF9A8888),
+            color: labelColor ?? const Color(0xFF888888),
             letterSpacing: 1.4,
           ),
         ),
@@ -532,13 +529,12 @@ class _LoginScreenState extends State<LoginScreen>
           textInputAction: textInputAction,
           onSubmitted: onSubmitted,
           onChanged: (_) => setState(() {}),
-          style: GoogleFonts.dmSans(
-              fontSize: 14.5, color: const Color(0xFF1A0505)),
+          style: GoogleFonts.dmSans(fontSize: 14.5, color: Colors.black),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.dmSans(
-                fontSize: 14, color: const Color(0xFFCDB8B8)),
-            prefixIcon: Icon(icon, size: 18, color: const Color(0xFF9A6060)),
+                fontSize: 14, color: const Color(0xFF999999)),
+            prefixIcon: Icon(icon, size: 18, color: const Color(0xFF666666)),
             suffixIcon: suffix != null
                 ? Padding(
                     padding: const EdgeInsets.only(right: 12),
@@ -546,22 +542,23 @@ class _LoginScreenState extends State<LoginScreen>
                   )
                 : null,
             filled: true,
-            fillColor: const Color(0xFFFAF7F7),
+            fillColor: Colors.white,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
               borderSide:
-                  const BorderSide(color: Color(0xFFF0E5E5), width: 1.5),
+                  const BorderSide(color: Color(0xFFDDDDDD), width: 1.5),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
               borderSide:
-                  const BorderSide(color: Color(0xFFF0E5E5), width: 1.5),
+                  const BorderSide(color: Color(0xFFDDDDDD), width: 1.5),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(13),
-              borderSide: const BorderSide(color: _red, width: 1.5),
+              borderSide: BorderSide(
+                  color: labelColor ?? const Color(0xFF888888), width: 1.5),
             ),
           ),
         ),
@@ -573,7 +570,7 @@ class _LoginScreenState extends State<LoginScreen>
 // ─── BACKGROUND PAINTER ────────────────────────────────────────────────────
 
 class _BackgroundPainter extends CustomPainter {
-  static const _red = Color(0xFFC0392B);
+  static const _accent = Color(0xFF3A3A3A);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -582,23 +579,23 @@ class _BackgroundPainter extends CustomPainter {
       ..strokeWidth = 0.5;
 
     // Líneas verticales laterales
-    thinLine.color = _red.withOpacity(0.12);
+    thinLine.color = _accent.withValues(alpha: 0.3);
     canvas.drawLine(const Offset(22, 0), Offset(22, size.height), thinLine);
     canvas.drawLine(Offset(size.width - 22, 0),
         Offset(size.width - 22, size.height), thinLine);
 
     // Líneas horizontales
-    thinLine.color = _red.withOpacity(0.08);
+    thinLine.color = _accent.withValues(alpha: 0.2);
     canvas.drawLine(const Offset(0, 100), Offset(size.width, 100), thinLine);
     canvas.drawLine(Offset(0, size.height - 100),
         Offset(size.width, size.height - 100), thinLine);
 
-    // Glow rojo en la parte superior
+    // Glow sutil en la parte superior
     final glowPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          _red.withOpacity(0.12),
-          _red.withOpacity(0.0),
+          _accent.withValues(alpha: 0.15),
+          _accent.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromCircle(
         center: Offset(size.width / 2, 0),
@@ -608,7 +605,7 @@ class _BackgroundPainter extends CustomPainter {
 
     // Ornamentos de esquinas
     final cornerPaint = Paint()
-      ..color = _red.withOpacity(0.22)
+      ..color = _accent.withValues(alpha: 0.4)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.8
       ..strokeCap = StrokeCap.square;
@@ -641,7 +638,7 @@ class _BackgroundPainter extends CustomPainter {
         text: '♪',
         style: TextStyle(
           fontSize: 28,
-          color: const Color(0xFFC0392B).withOpacity(opacity),
+          color: const Color(0xFF3A3A3A).withValues(alpha: opacity),
           fontFamily: 'serif',
         ),
       ),
