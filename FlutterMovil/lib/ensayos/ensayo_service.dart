@@ -31,7 +31,25 @@ class EnsayoService {
         .timeout(NetworkConfig.timeout);
 
     if (res.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(res.body);
+      final decoded = jsonDecode(res.body);
+
+      // El backend puede devolver [] o { data: [], ensayos: [], ... }
+      final List<dynamic> data;
+      if (decoded is List) {
+        data = decoded;
+      } else if (decoded is Map) {
+        data = decoded.values.whereType<List>().firstOrNull ?? [];
+      } else {
+        data = [];
+      }
+
+      // Log para ver qué campos trae el primer ensayo
+      if (data.isNotEmpty) {
+        final primero = data.first as Map<String, dynamic>;
+        print('=== DEBUG ENSAYO KEYS: ${primero.keys.toList()}');
+        print('=== DEBUG ENSAYO DATA: $primero');
+      }
+
       return data
           .map((e) => Ensayo.fromJson(e as Map<String, dynamic>))
           .toList();

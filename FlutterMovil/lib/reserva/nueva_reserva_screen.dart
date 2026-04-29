@@ -38,6 +38,44 @@ class _NuevaReservaScreenState extends State<NuevaReservaScreen> {
   List<String> _horasDisponibles = [];
   bool _verificandoDisponibilidad = false;
 
+  // ── Getters computados ────────────────────────────────────────────────────
+
+  /// Detecta si un servicio es "hora extra" por su nombre
+  bool _esServicioHoraExtra(Servicio s) {
+    final nombre = s.nombre.toLowerCase();
+    return nombre.contains('hora extra') ||
+        nombre.contains('hora adicional') ||
+        nombre.contains('hora suplementaria');
+  }
+
+  /// Horas extras seleccionadas (suma de cantidades de servicios hora extra)
+  int get _horasExtrasSeleccionadas {
+    int total = 0;
+    for (final entry in _serviciosSeleccionados.entries) {
+      final svc =
+          _serviciosDisponibles.where((s) => s.id == entry.key).firstOrNull;
+      if (svc != null && _esServicioHoraExtra(svc)) {
+        total += entry.value;
+      }
+    }
+    return total;
+  }
+
+  /// Duración total = 1h base + horas extras seleccionadas
+  int get _duracionHoras => 1 + _horasExtrasSeleccionadas;
+
+  /// Hora fin calculada
+  TimeOfDay? get _horaFinCalculada {
+    if (_horaInicio == null) return null;
+    return TimeOfDay(
+      hour: (_horaInicio!.hour + _duracionHoras) % 24,
+      minute: _horaInicio!.minute,
+    );
+  }
+
+  String _formatTimeOfDay(TimeOfDay t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
   @override
   void initState() {
     super.initState();
@@ -119,11 +157,31 @@ class _NuevaReservaScreenState extends State<NuevaReservaScreen> {
     });
   }
 
+  // Servicios mutuamente excluyentes por nombre
+  static bool _esSerenataUrbana(String nombre) =>
+      nombre.toLowerCase().contains('urbana');
+
+  static bool _esSerenataRural(String nombre) =>
+      nombre.toLowerCase().contains('rural');
+
   void _toggleServicio(Servicio servicio) {
     setState(() {
       if (_serviciosSeleccionados.containsKey(servicio.id)) {
+        // Deseleccionar
         _serviciosSeleccionados.remove(servicio.id);
       } else {
+        // Seleccionar — quitar el opuesto si aplica
+        if (_esSerenataUrbana(servicio.nombre)) {
+          // Quitar cualquier serenata rural seleccionada
+          _serviciosDisponibles
+              .where((s) => _esSerenataRural(s.nombre))
+              .forEach((s) => _serviciosSeleccionados.remove(s.id));
+        } else if (_esSerenataRural(servicio.nombre)) {
+          // Quitar cualquier serenata urbana seleccionada
+          _serviciosDisponibles
+              .where((s) => _esSerenataUrbana(s.nombre))
+              .forEach((s) => _serviciosSeleccionados.remove(s.id));
+        }
         _serviciosSeleccionados[servicio.id] = 1;
       }
     });
@@ -131,11 +189,19 @@ class _NuevaReservaScreenState extends State<NuevaReservaScreen> {
 
   void _actualizarCantidad(int servicioId, int cantidad) {
     setState(() {
-      if (cantidad > 0) {
-        _serviciosSeleccionados[servicioId] = cantidad;
-      } else {
+      if (cantidad <= 0) {
         _serviciosSeleccionados.remove(servicioId);
+        return;
       }
+      // Serenata urbana y rural: máximo 1
+      final svc =
+          _serviciosDisponibles.where((s) => s.id == servicioId).firstOrNull;
+      if (svc != null &&
+          (_esSerenataUrbana(svc.nombre) || _esSerenataRural(svc.nombre))) {
+        _serviciosSeleccionados[servicioId] = 1;
+        return;
+      }
+      _serviciosSeleccionados[servicioId] = cantidad;
     });
   }
 
@@ -365,17 +431,9 @@ class _NuevaReservaScreenState extends State<NuevaReservaScreen> {
     print('Servicios con cantidad: $servicios');
     print('Solo IDs: $serviciosIds');
 
-    // Calcular hora fin según disponibilidad
-    // Si es hora extra: duración = 2h (1 base + 1 extra)
-    // Si es disponible: duración = 1h
-    final horaStr =
-        '${_horaInicio!.hour.toString().padLeft(2, '0')}:${_horaInicio!.minute.toString().padLeft(2, '0')}';
-    final esHoraExtra = !_horasDisponibles.contains(horaStr);
-    final duracionHoras = esHoraExtra ? 2 : 1;
-    final horaFinCalculada = TimeOfDay(
-      hour: (_horaInicio!.hour + duracionHoras) % 24,
-      minute: _horaInicio!.minute,
-    );
+    // Calcular hora fin según servicios de hora extra seleccionados
+    // duración = 1h base + N horas extras
+    final horaFin = _horaFinCalculada!;
 
     final success = await controller.crearReserva(
       clienteId: _clienteSeleccionado!.id,
@@ -385,10 +443,8 @@ class _NuevaReservaScreenState extends State<NuevaReservaScreen> {
       homenajeado: _homenajeadoCtrl.text.trim(),
       tipoEvento: _tipoEvento,
       fechaEvento: _fechaEvento,
-      horaInicio:
-          '${_horaInicio!.hour.toString().padLeft(2, '0')}:${_horaInicio!.minute.toString().padLeft(2, '0')}',
-      horaFin:
-          '${horaFinCalculada.hour.toString().padLeft(2, '0')}:${horaFinCalculada.minute.toString().padLeft(2, '0')}',
+      horaInicio: _formatTimeOfDay(_horaInicio!),
+      horaFin: _formatTimeOfDay(horaFin),
       ubicacion: _ubicacionCtrl.text.trim(),
       totalValor: _totalCalculado,
       servicios: servicios,
@@ -406,12 +462,46 @@ class _NuevaReservaScreenState extends State<NuevaReservaScreen> {
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(controller.errorMsg),
-            backgroundColor: AppColors.primary,
-          ),
-        );
+        final msg = controller.errorMsg;
+        final esConflicto = msg.toLowerCase().contains('conflicto') ||
+            msg.toLowerCase().contains('ocupad') ||
+            msg.toLowerCase().contains('activa');
+
+        if (esConflicto) {
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              icon: const Icon(Icons.schedule_outlined,
+                  color: Color(0xFFB45309), size: 40),
+              title: const Text('Conflicto de Horario',
+                  textAlign: TextAlign.center),
+              content: Text(
+                msg,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14),
+              ),
+              actions: [
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    // Recargar disponibilidad para reflejar el conflicto
+                    _verificarDisponibilidad();
+                  },
+                  child: const Text('Cambiar hora'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(msg),
+              backgroundColor: AppColors.primary,
+            ),
+          );
+        }
       }
     }
   }
@@ -662,40 +752,39 @@ class _NuevaReservaScreenState extends State<NuevaReservaScreen> {
                         _horaInicio!.format(context),
                         style: const TextStyle(fontWeight: FontWeight.w600),
                       ),
+                      const SizedBox(width: 6),
+                      const Icon(Icons.arrow_forward,
+                          size: 12, color: AppColors.textMuted),
+                      const SizedBox(width: 6),
+                      Text(
+                        _horaFinCalculada != null
+                            ? _formatTimeOfDay(_horaFinCalculada!)
+                            : '',
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       const SizedBox(width: 8),
-                      if (!_horasDisponibles.contains(
-                          '${_horaInicio!.hour.toString().padLeft(2, '0')}:${_horaInicio!.minute.toString().padLeft(2, '0')}'))
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF3C7),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'Hora extra · 2h duración',
-                            style: TextStyle(
-                                fontSize: 10,
-                                color: Color(0xFFB45309),
-                                fontWeight: FontWeight.w700),
-                          ),
-                        )
-                      else
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFDCFCE7),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            '1h duración',
-                            style: TextStyle(
-                                fontSize: 10,
-                                color: Color(0xFF047857),
-                                fontWeight: FontWeight.w700),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _horasExtrasSeleccionadas > 0
+                              ? const Color(0xFFFEF3C7)
+                              : const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          _horasExtrasSeleccionadas > 0
+                              ? '${_duracionHoras}h · $_horasExtrasSeleccionadas extra'
+                              : '${_duracionHoras}h',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: _horasExtrasSeleccionadas > 0
+                                ? const Color(0xFFB45309)
+                                : const Color(0xFF047857),
                           ),
                         ),
+                      ),
                     ])
                   : Text(
                       _verificandoDisponibilidad
@@ -782,6 +871,29 @@ class _NuevaReservaScreenState extends State<NuevaReservaScreen> {
                     _serviciosSeleccionados.containsKey(servicio.id);
                 final cantidad = _serviciosSeleccionados[servicio.id] ?? 1;
 
+                // Determinar si está bloqueado por exclusión mutua
+                final bool bloqueado;
+                String? motivoBloqueo;
+                if (!seleccionado) {
+                  if (_esSerenataUrbana(servicio.nombre) &&
+                      _serviciosDisponibles.any((s) =>
+                          _esSerenataRural(s.nombre) &&
+                          _serviciosSeleccionados.containsKey(s.id))) {
+                    bloqueado = true;
+                    motivoBloqueo = 'No compatible con Serenata Rural';
+                  } else if (_esSerenataRural(servicio.nombre) &&
+                      _serviciosDisponibles.any((s) =>
+                          _esSerenataUrbana(s.nombre) &&
+                          _serviciosSeleccionados.containsKey(s.id))) {
+                    bloqueado = true;
+                    motivoBloqueo = 'No compatible con Serenata Urbana';
+                  } else {
+                    bloqueado = false;
+                  }
+                } else {
+                  bloqueado = false;
+                }
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
                   elevation: seleccionado ? 2 : 0,
@@ -790,104 +902,148 @@ class _NuevaReservaScreenState extends State<NuevaReservaScreen> {
                     side: BorderSide(
                       color: seleccionado
                           ? AppColors.primary
-                          : const Color(0xFFE2E8F0),
+                          : bloqueado
+                              ? const Color(0xFFE2E8F0)
+                              : const Color(0xFFE2E8F0),
                       width: seleccionado ? 2 : 1,
                     ),
                   ),
-                  child: InkWell(
-                    onTap: () => _toggleServicio(servicio),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          Checkbox(
-                            value: seleccionado,
-                            onChanged: (_) => _toggleServicio(servicio),
-                            activeColor: AppColors.primary,
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  servicio.nombre,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15,
-                                    color: seleccionado
-                                        ? AppColors.primary
-                                        : AppColors.text,
-                                  ),
-                                ),
-                                if (servicio.descripcion != null) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    servicio.descripcion!,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textMuted,
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(height: 4),
-                                Text(
-                                  formatCop(servicio.precio.round()),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    color: seleccionado
-                                        ? AppColors.primary
-                                        : AppColors.text,
-                                  ),
-                                ),
-                              ],
+                  child: Opacity(
+                    opacity: bloqueado ? 0.45 : 1.0,
+                    child: InkWell(
+                      onTap: bloqueado ? null : () => _toggleServicio(servicio),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Checkbox(
+                              value: seleccionado,
+                              onChanged: bloqueado
+                                  ? null
+                                  : (_) => _toggleServicio(servicio),
+                              activeColor: AppColors.primary,
                             ),
-                          ),
-                          if (seleccionado) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.remove, size: 18),
-                                    onPressed: () => _actualizarCantidad(
-                                        servicio.id, cantidad - 1),
-                                    padding: const EdgeInsets.all(4),
-                                    constraints: const BoxConstraints(
-                                      minWidth: 32,
-                                      minHeight: 32,
-                                    ),
-                                  ),
                                   Text(
-                                    '$cantidad',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 16,
+                                    servicio.nombre,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                      color: seleccionado
+                                          ? AppColors.primary
+                                          : bloqueado
+                                              ? AppColors.textMuted
+                                              : AppColors.text,
                                     ),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.add, size: 18),
-                                    onPressed: () => _actualizarCantidad(
-                                        servicio.id, cantidad + 1),
-                                    padding: const EdgeInsets.all(4),
-                                    constraints: const BoxConstraints(
-                                      minWidth: 32,
-                                      minHeight: 32,
+                                  if (motivoBloqueo != null) ...[
+                                    const SizedBox(height: 2),
+                                    Row(children: [
+                                      const Icon(Icons.block,
+                                          size: 11, color: Color(0xFFB91C1C)),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        motivoBloqueo,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Color(0xFFB91C1C),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ]),
+                                  ] else if (servicio.descripcion != null) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      servicio.descripcion!,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    formatCop(servicio.precio.round()),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      color: seleccionado
+                                          ? AppColors.primary
+                                          : AppColors.text,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
+                            if (seleccionado) ...[
+                              const SizedBox(width: 8),
+                              // Urbana y rural: cantidad fija en 1, sin controles
+                              if (_esSerenataUrbana(servicio.nombre) ||
+                                  _esSerenataRural(servicio.nombre))
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary
+                                        .withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text('x1',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 14,
+                                          color: AppColors.primary)),
+                                )
+                              else
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary
+                                        .withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon:
+                                            const Icon(Icons.remove, size: 18),
+                                        onPressed: () => _actualizarCantidad(
+                                            servicio.id, cantidad - 1),
+                                        padding: const EdgeInsets.all(4),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 32,
+                                          minHeight: 32,
+                                        ),
+                                      ),
+                                      Text(
+                                        '$cantidad',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.add, size: 18),
+                                        onPressed: () => _actualizarCantidad(
+                                            servicio.id, cantidad + 1),
+                                        padding: const EdgeInsets.all(4),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 32,
+                                          minHeight: 32,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                  ), // Opacity
                 );
               }),
 
