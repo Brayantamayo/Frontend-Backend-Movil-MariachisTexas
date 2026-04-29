@@ -42,24 +42,6 @@ DateTime? _parseDateTime(dynamic v) {
   }
 }
 
-List<CotizacionServicio> _parseServicios(dynamic raw) {
-  if (raw == null) return [];
-  if (raw is! List) return [];
-  final list = raw;
-  if (list.isEmpty) return [];
-  return list
-      .map((e) {
-        try {
-          final m = e as Map<String, dynamic>;
-          return CotizacionServicio.fromJson(m);
-        } catch (_) {
-          return null;
-        }
-      })
-      .whereType<CotizacionServicio>()
-      .toList();
-}
-
 // ─── USUARIO ──────────────────────────────────────────────────────────────────
 
 class Usuario {
