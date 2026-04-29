@@ -209,12 +209,15 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
                   DateTime(_focusedDay.year, _focusedDay.month - 1, 1);
             });
           },
-          icon: const Icon(Icons.chevron_left, color: AppColors.primary),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+          icon: const Icon(Icons.chevron_left,
+              color: AppColors.primary, size: 18),
         ),
         Text(
           DateFormat('MMMM yyyy', 'es').format(_focusedDay),
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
             color: AppColors.text,
           ),
@@ -226,7 +229,10 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
                   DateTime(_focusedDay.year, _focusedDay.month + 1, 1);
             });
           },
-          icon: const Icon(Icons.chevron_right, color: AppColors.primary),
+          icon: const Icon(Icons.chevron_right,
+              color: AppColors.primary, size: 18),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
         ),
       ],
     );
@@ -243,7 +249,7 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       color: AppColors.textMuted,
-                      fontSize: 12,
+                      fontSize: 10,
                     ),
                   ),
                 ),
@@ -286,8 +292,8 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
               });
             },
             child: Container(
-              height: 34,
-              margin: const EdgeInsets.all(1.5),
+              height: 26,
+              margin: const EdgeInsets.all(1),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primary
@@ -313,7 +319,7 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
                         fontWeight: isToday || isSelected
                             ? FontWeight.w900
                             : FontWeight.w500,
-                        fontSize: 12,
+                        fontSize: 10,
                       ),
                     ),
                   ),
@@ -324,8 +330,8 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
                       right: 0,
                       child: Center(
                         child: Container(
-                          width: 5,
-                          height: 5,
+                          width: 4,
+                          height: 4,
                           decoration: BoxDecoration(
                             color:
                                 isSelected ? Colors.white : AppColors.primary,

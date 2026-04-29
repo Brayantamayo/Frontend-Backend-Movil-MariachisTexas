@@ -660,29 +660,39 @@ class Ensayo {
 
   factory Ensayo.fromJson(Map<String, dynamic> j) => Ensayo(
         id: _parseInt(j['id']),
-        // El backend mapea nombre→title, lugar→location, ubicacion→address,
-        // estado→status, fechaHora→dateTime
-        nombre:
-            (j['title'] as String?) ?? (j['nombre'] as String?) ?? 'Sin nombre',
-        fechaHora: _parseDateTime(j['dateTime'] as String?) ??
-            _parseDateTime(j['fechaHora'] as String?) ??
+        nombre: (j['title'] ??
+            j['nombre'] ??
+            j['name'] ??
+            j['titulo'] ??
+            'Sin nombre') as String,
+        fechaHora: _parseDateTime(j['dateTime'] ??
+                j['date_time'] ??
+                j['fechaHora'] ??
+                j['fecha_hora'] ??
+                j['fecha'] ??
+                j['date']) ??
             DateTime.now(),
-        lugar: (j['location'] as String?) ??
-            (j['lugar'] as String?) ??
-            'Sin lugar',
-        ubicacion: (j['address'] as String?) ?? (j['ubicacion'] as String?),
-        estado: _estadoEnsayoFromString((j['status'] as String?) ??
-            (j['estado'] as String?) ??
-            'PENDIENTE'),
+        lugar: (j['location'] ??
+            j['lugar'] ??
+            j['place'] ??
+            j['sede'] ??
+            'Sin lugar') as String,
+        ubicacion:
+            (j['address'] ?? j['ubicacion'] ?? j['direccion']) as String?,
+        estado: _estadoEnsayoFromString((j['status'] ??
+            j['estado'] ??
+            j['state'] ??
+            'PENDIENTE') as String),
         repertorios: (j['repertoires'] as List<dynamic>? ??
-                    j['repertorios'] as List<dynamic>?)
+                    j['repertorios'] as List<dynamic>? ??
+                    j['songs'] as List<dynamic>?)
                 ?.map((e) {
-              final data = e['repertorio'] ?? e['repertoire'] ?? e;
+              final data = e['repertorio'] ?? e['repertoire'] ?? e['song'] ?? e;
               return Repertorio.fromJson(data as Map<String, dynamic>);
             }).toList() ??
             [],
-        createdAt: _parseDateTime(j['createdAt'] as String?),
-        updatedAt: _parseDateTime(j['updatedAt'] as String?),
+        createdAt: _parseDateTime(j['createdAt'] ?? j['created_at']),
+        updatedAt: _parseDateTime(j['updatedAt'] ?? j['updated_at']),
       );
 
   String get estadoLabel =>
