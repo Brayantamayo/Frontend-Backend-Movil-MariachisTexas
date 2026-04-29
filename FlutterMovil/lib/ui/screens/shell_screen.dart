@@ -9,6 +9,7 @@ import '../../cotizacion/cotizaciones_screen.dart';
 import '../../ensayos/ensayos_screen.dart';
 import '../../repertorio/repertorio_screen.dart';
 import '../../reserva/reservas_screen.dart';
+import '../../venta/ventas_screen.dart';
 
 class ShellScreen extends StatefulWidget {
   const ShellScreen({super.key});
@@ -24,24 +25,27 @@ class _ShellScreenState extends State<ShellScreen>
   late Animation<double> _headerFade;
 
   static const _tabs = <Widget>[
-    ReservasScreen(),
     CotizacionesScreen(),
+    ReservasScreen(),
+    VentasScreen(),
     ClientesScreen(),
     RepertorioScreen(),
     EnsayosScreen(),
   ];
 
   static const _tabLabels = [
-    'Reservas',
     'Cotizaciones',
+    'Reservas',
+    'Ventas',
     'Clientes',
     'Repertorio',
     'Ensayos',
   ];
 
   static const _tabIcons = [
-    Icons.calendar_month_rounded,
     Icons.receipt_long_rounded,
+    Icons.calendar_month_rounded,
+    Icons.shopping_bag_rounded,
     Icons.people_alt_rounded,
     Icons.library_music_rounded,
     Icons.mic_rounded,
@@ -75,7 +79,7 @@ class _ShellScreenState extends State<ShellScreen>
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
-    final primary =AppColors.primary;
+    const primary = AppColors.primary;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,

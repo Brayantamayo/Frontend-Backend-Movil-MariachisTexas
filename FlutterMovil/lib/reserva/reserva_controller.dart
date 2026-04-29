@@ -44,12 +44,15 @@ class ReservaController extends ChangeNotifier {
       _todas = List.from(_todasOriginales);
     } else {
       final lower = q.toLowerCase();
-      _todas = _todasOriginales.where((r) =>
-        r.clienteNombre.toLowerCase().contains(lower) ||
-        r.homenajeado.toLowerCase().contains(lower) ||
-        r.tipoEvento.toLowerCase().contains(lower) ||
-        r.estadoLabel.toLowerCase().contains(lower),
-      ).toList();
+      _todas = _todasOriginales
+          .where(
+            (r) =>
+                r.clienteNombre.toLowerCase().contains(lower) ||
+                r.homenajeado.toLowerCase().contains(lower) ||
+                r.tipoEvento.toLowerCase().contains(lower) ||
+                r.estadoLabel.toLowerCase().contains(lower),
+          )
+          .toList();
     }
     notifyListeners();
   }
@@ -110,6 +113,172 @@ class ReservaController extends ChangeNotifier {
   void limpiarError() {
     errorMsg = '';
     notifyListeners();
+  }
+
+  // ── Crear reserva directa ──────────────────────────────────────────────────
+
+  Future<bool> crearReserva({
+    required int clienteId,
+    required String clienteNombre,
+    required String clienteEmail,
+    required String clienteTelefono,
+    required String homenajeado,
+    required TipoEvento tipoEvento,
+    required DateTime fechaEvento,
+    required String horaInicio,
+    required String horaFin,
+    required String ubicacion,
+    required double totalValor,
+    List<Map<String, dynamic>>? servicios,
+  }) async {
+    try {
+      await _service.crearReserva(
+        clienteId: clienteId,
+        clienteNombre: clienteNombre,
+        clienteEmail: clienteEmail,
+        clienteTelefono: clienteTelefono,
+        homenajeado: homenajeado,
+        tipoEvento: _tipoEventoToString(tipoEvento),
+        fechaEvento: fechaEvento,
+        horaInicio: horaInicio,
+        horaFin: horaFin,
+        ubicacion: ubicacion,
+        totalValor: totalValor,
+        servicios: servicios,
+      );
+      // Recargar la lista de reservas
+      await cargar();
+      return true;
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ── Obtener horas disponibles ──────────────────────────────────────────────
+
+  Future<List<String>> obtenerHorasDisponibles(DateTime fecha) async {
+    try {
+      return await _service.obtenerHorasDisponibles(fecha);
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      // Retornar horas por defecto si hay error
+      return _generarHorasPorDefecto();
+    }
+  }
+
+  List<String> _generarHorasPorDefecto() {
+    // Generar horas de 8:00 AM a 11:00 PM cada hora
+    final horas = <String>[];
+    for (int h = 8; h <= 23; h++) {
+      horas.add('${h.toString().padLeft(2, '0')}:00');
+    }
+    return horas;
+  }
+
+  // ── Helper para convertir TipoEvento a String ──────────────────────────────
+
+  String _tipoEventoToString(TipoEvento tipo) {
+    return switch (tipo) {
+      TipoEvento.boda => 'BODA',
+      TipoEvento.cumpleanos => 'CUMPLEANOS',
+      TipoEvento.quinceanios => 'QUINCEANIOS',
+      TipoEvento.funeral => 'FUNERAL',
+      TipoEvento.reconciliacion => 'RECONCILIACION',
+      TipoEvento.diaDeMadre => 'DIA_DE_MADRE',
+      TipoEvento.amor => 'AMOR',
+      TipoEvento.aniversario => 'ANIVERSARIO',
+      TipoEvento.padres => 'PADRES',
+      TipoEvento.fiesta => 'FIESTA',
+      TipoEvento.otro => 'OTRO',
+    };
+  }
+
+  // ── Actualizar reserva ────────────────────────────────────────────────────
+
+  Future<bool> actualizarReserva(int id, Map<String, dynamic> datos) async {
+    try {
+      await _service.actualizarReserva(id, datos);
+      await cargar();
+      return true;
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ── Eliminar reserva ─────────────────────────────────────────────────────
+
+  Future<bool> eliminarReserva(int id) async {
+    try {
+      await _service.eliminarReserva(id);
+      // Remover de las listas locales
+      _todas.removeWhere((r) => r.id == id);
+      _todasOriginales.removeWhere((r) => r.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ── Reprogramar reserva ──────────────────────────────────────────────────
+
+  Future<bool> reprogramarReserva(int id, DateTime nuevaFecha,
+      String nuevaHoraInicio, String nuevaHoraFin) async {
+    try {
+      await _service.reprogramarReserva(
+          id, nuevaFecha, nuevaHoraInicio, nuevaHoraFin);
+      await cargar();
+      return true;
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ── Finalizar reserva ─────────────────────────────────────────────────────
+
+  Future<bool> finalizarReserva(int id) async {
+    try {
+      await _service.finalizarReserva(id);
+      _actualizarEstado(id, 'FINALIZADO');
+      return true;
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ── Obtener abonos de una reserva ─────────────────────────────────────────
+
+  Future<List<Abono>> obtenerAbonosReserva(int reservaId) async {
+    try {
+      return await _service.obtenerAbonosReserva(reservaId);
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return [];
+    }
+  }
+
+  // ── Obtener todos los abonos ─────────────────────────────────────────────
+
+  Future<List<Abono>> obtenerTodosAbonos() async {
+    try {
+      return await _service.obtenerTodosAbonos();
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return [];
+    }
   }
 
   // ── Helper interno ─────────────────────────────────────────────────────────

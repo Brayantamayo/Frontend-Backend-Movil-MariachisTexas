@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:mariachi_admin/app/service/app_controller.dart';
 import 'package:mariachi_admin/auth/auth_controller.dart';
@@ -7,10 +8,14 @@ import 'package:mariachi_admin/clientes/clientes_controller.dart';
 import 'package:mariachi_admin/cotizacion/cotizacion_controller.dart';
 import 'package:mariachi_admin/repertorio/repertorio_controller.dart';
 import 'package:mariachi_admin/reserva/reserva_controller.dart';
+import 'package:mariachi_admin/venta/venta_controller.dart';
 import 'package:mariachi_admin/ensayos/ensayo_controller.dart';
 import 'package:mariachi_admin/app/service/app_root.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('es_ES', null);
+
   runApp(
     MultiProvider(
       providers: [
@@ -23,6 +28,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => RepertorioController()),
         ChangeNotifierProvider(create: (_) => CotizacionController()),
         ChangeNotifierProvider(create: (_) => ReservaController()),
+        ChangeNotifierProvider(create: (_) => VentaController()),
         ChangeNotifierProvider(create: (_) => EnsayoController()),
       ],
       child: const AppRoot(),

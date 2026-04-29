@@ -20,8 +20,8 @@ class _BottomNavState extends State<BottomNav> {
   static const _inactiveColor = Color(0xFF9E9E9E);
 
   static const _items = [
-    _NavItem(Icons.calendar_month_outlined, Icons.calendar_month, 'Reservas'),
     _NavItem(Icons.description_outlined, Icons.description, 'Cotizaciones'),
+    _NavItem(Icons.calendar_month_outlined, Icons.calendar_month, 'Reservas'),
     _NavItem(Icons.people_alt_outlined, Icons.people_alt, 'Clientes'),
     _NavItem(Icons.library_music_outlined, Icons.library_music, 'Repertorio'),
     _NavItem(Icons.mic_none_outlined, Icons.mic, 'Ensayos'),
