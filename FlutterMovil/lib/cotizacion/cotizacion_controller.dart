@@ -32,24 +32,27 @@ class CotizacionController extends ChangeNotifier {
     notifyListeners();
   }
 
-/// Buscar cotizaciones
+  /// Buscar cotizaciones
   void buscar(String q) {
     _query = q;
     if (q.trim().isEmpty) {
       _todas = List.from(_todasOriginales);
     } else {
       final lower = q.toLowerCase();
-      _todas = _todasOriginales.where((c) =>
-        c.clienteNombre.toLowerCase().contains(lower) ||
-        c.homenajeado.toLowerCase().contains(lower) ||
-        c.tipoEventoLabel.toLowerCase().contains(lower) ||
-        c.estadoLabel.toLowerCase().contains(lower),
-      ).toList();
+      _todas = _todasOriginales
+          .where(
+            (c) =>
+                c.clienteNombre.toLowerCase().contains(lower) ||
+                c.homenajeado.toLowerCase().contains(lower) ||
+                c.tipoEventoLabel.toLowerCase().contains(lower) ||
+                c.estadoLabel.toLowerCase().contains(lower),
+          )
+          .toList();
     }
     notifyListeners();
   }
 
-/// Obtener detalle de una cotización
+  /// Obtener detalle de una cotización
   Future<Cotizacion?> getDetalle(int id) async {
     try {
       return await _service.getCotizacionById(id);
@@ -59,7 +62,8 @@ class CotizacionController extends ChangeNotifier {
       return null;
     }
   }
-/// Convertir a reserva
+
+  /// Convertir a reserva
   Future<bool> convertirAReserva(int id) async {
     try {
       await _service.convertirAReserva(id);
@@ -72,7 +76,7 @@ class CotizacionController extends ChangeNotifier {
     }
   }
 
-/// Anular cotización
+  /// Anular cotización
   Future<bool> anular(int id) async {
     try {
       await _service.anularCotizacion(id);
@@ -85,7 +89,7 @@ class CotizacionController extends ChangeNotifier {
     }
   }
 
-/// Eliminar cotización
+  /// Eliminar cotización
   Future<bool> eliminar(int id) async {
     try {
       await _service.eliminarCotizacion(id);
@@ -100,7 +104,7 @@ class CotizacionController extends ChangeNotifier {
     }
   }
 
-/// Descargar PDF de la cotización
+  /// Descargar PDF de la cotización
   Future<bool> descargarPDF(int id) async {
     try {
       await _service.descargarPDF(id);
@@ -111,9 +115,65 @@ class CotizacionController extends ChangeNotifier {
       return false;
     }
   }
+
   void limpiarError() {
     errorMsg = '';
     notifyListeners();
+  }
+
+  // ── Crear cotización ───────────────────────────────────────────────────────
+
+  Future<bool> crearCotizacion({
+    required String clienteNombre,
+    required String clienteEmail,
+    required String clienteTelefono,
+    required String homenajeado,
+    required TipoEvento tipoEvento,
+    required DateTime fechaEvento,
+    required String horaInicio,
+    required String horaFin,
+    required String ubicacion,
+    required List<Map<String, dynamic>> servicios,
+  }) async {
+    try {
+      await _service.crearCotizacion(
+        clienteNombre: clienteNombre,
+        clienteEmail: clienteEmail,
+        clienteTelefono: clienteTelefono,
+        homenajeado: homenajeado,
+        tipoEvento: _tipoEventoToString(tipoEvento),
+        fechaEvento: fechaEvento,
+        horaInicio: horaInicio,
+        horaFin: horaFin,
+        ubicacion: ubicacion,
+        servicios: servicios,
+      );
+      // Recargar la lista de cotizaciones
+      await cargar();
+      return true;
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // ── Helper para convertir TipoEvento a String ──────────────────────────────
+
+  String _tipoEventoToString(TipoEvento tipo) {
+    return switch (tipo) {
+      TipoEvento.boda => 'BODA',
+      TipoEvento.cumpleanos => 'CUMPLEANOS',
+      TipoEvento.quinceanios => 'QUINCEANIOS',
+      TipoEvento.funeral => 'FUNERAL',
+      TipoEvento.reconciliacion => 'RECONCILIACION',
+      TipoEvento.diaDeMadre => 'DIA_DE_MADRE',
+      TipoEvento.amor => 'AMOR',
+      TipoEvento.aniversario => 'ANIVERSARIO',
+      TipoEvento.padres => 'PADRES',
+      TipoEvento.fiesta => 'FIESTA',
+      TipoEvento.otro => 'OTRO',
+    };
   }
 
   // ── Helper interno ────────────────────────────────────────────────────────
@@ -121,7 +181,9 @@ class CotizacionController extends ChangeNotifier {
     final idx = _todas.indexWhere((c) => c.id == id);
     if (idx != -1) _todas[idx] = _todas[idx].copyWith(estado: nuevoEstado);
     final idx2 = _todasOriginales.indexWhere((c) => c.id == id);
-    if (idx2 != -1) _todasOriginales[idx2] = _todasOriginales[idx2].copyWith(estado: nuevoEstado);
+    if (idx2 != -1)
+      _todasOriginales[idx2] =
+          _todasOriginales[idx2].copyWith(estado: nuevoEstado);
     notifyListeners();
   }
 }

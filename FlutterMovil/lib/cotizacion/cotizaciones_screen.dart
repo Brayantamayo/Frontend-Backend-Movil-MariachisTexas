@@ -336,17 +336,17 @@ class _CotizacionCard extends StatelessWidget {
 
   Color _pillBg() {
     return switch (c.estado) {
-      EstadoCotizacion.enEspera   => const Color(0xFFFEF3C7),
+      EstadoCotizacion.enEspera => const Color(0xFFFEF3C7),
       EstadoCotizacion.convertida => const Color(0xFFDCFCE7),
-      EstadoCotizacion.anulada    => const Color(0xFFFEE2E2),
+      EstadoCotizacion.anulada => const Color(0xFFFEE2E2),
     };
   }
 
   Color _pillFg() {
     return switch (c.estado) {
-      EstadoCotizacion.enEspera   => const Color(0xFFB45309),
+      EstadoCotizacion.enEspera => const Color(0xFFB45309),
       EstadoCotizacion.convertida => const Color(0xFF047857),
-      EstadoCotizacion.anulada    => const Color(0xFFB91C1C),
+      EstadoCotizacion.anulada => const Color(0xFFB91C1C),
     };
   }
 
@@ -476,7 +476,8 @@ class _CotizacionCard extends StatelessWidget {
                       value: 'eliminar',
                       child: Row(
                         children: [
-                          Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                          Icon(Icons.delete_outline,
+                              size: 18, color: Colors.red),
                           SizedBox(width: 8),
                           Text('Eliminar', style: TextStyle(color: Colors.red)),
                         ],
