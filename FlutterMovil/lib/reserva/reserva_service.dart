@@ -45,14 +45,8 @@ class ReservaService {
       final data = jsonDecode(response.body) as List<dynamic>;
       if (data.isNotEmpty) {
         final primera = data.first as Map<String, dynamic>;
-        print('=== DEBUG RESERVA KEYS: ${primera.keys.toList()}');
-        // Imprimir todas las claves que puedan contener servicios
-        for (final key in primera.keys) {
-          final val = primera[key];
-          if (val is List && val.isNotEmpty) {
-            print('=== LISTA "$key" (${val.length} items): ${val.first}');
-          }
-        }
+        // Log completo para diagnóstico — ver en consola del navegador
+        print('=== DEBUG RESERVA COMPLETA: $primera');
       }
       return data
           .map((e) => Reserva.fromJson(e as Map<String, dynamic>))
@@ -87,8 +81,9 @@ class ReservaService {
         .timeout(NetworkConfig.timeout);
 
     if (response.statusCode == 200) {
-      return Reserva.fromJson(
-          jsonDecode(response.body) as Map<String, dynamic>);
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      print('=== DEBUG RESERVA DETALLE: $json');
+      return Reserva.fromJson(json);
     }
 
     throw Exception(_extractErrorMessage(response));

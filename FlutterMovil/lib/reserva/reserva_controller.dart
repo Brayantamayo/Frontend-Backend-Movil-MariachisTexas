@@ -40,20 +40,33 @@ class ReservaController extends ChangeNotifier {
 
   void buscar(String q) {
     _query = q;
-    if (q.trim().isEmpty) {
-      _todas = List.from(_todasOriginales);
-    } else {
-      final lower = q.toLowerCase();
-      _todas = _todasOriginales
-          .where(
-            (r) =>
-                r.clienteNombre.toLowerCase().contains(lower) ||
-                r.homenajeado.toLowerCase().contains(lower) ||
-                r.tipoEvento.toLowerCase().contains(lower) ||
-                r.estadoLabel.toLowerCase().contains(lower),
-          )
+    _aplicarFiltros();
+  }
+
+  EstadoReserva? _estadoFiltro;
+  EstadoReserva? get estadoFiltro => _estadoFiltro;
+
+  void filtrarPorEstado(EstadoReserva? estado) {
+    _estadoFiltro = estado;
+    _aplicarFiltros();
+  }
+
+  void _aplicarFiltros() {
+    var lista = List<Reserva>.from(_todasOriginales);
+    if (_estadoFiltro != null) {
+      lista = lista.where((r) => r.estadoEnum == _estadoFiltro).toList();
+    }
+    if (_query.trim().isNotEmpty) {
+      final lower = _query.toLowerCase();
+      lista = lista
+          .where((r) =>
+              r.clienteNombre.toLowerCase().contains(lower) ||
+              r.homenajeado.toLowerCase().contains(lower) ||
+              r.tipoEvento.toLowerCase().contains(lower) ||
+              r.estadoLabel.toLowerCase().contains(lower))
           .toList();
     }
+    _todas = lista;
     notifyListeners();
   }
 

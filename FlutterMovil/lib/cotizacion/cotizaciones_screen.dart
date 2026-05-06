@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/format/currency.dart';
 import '../core/theme/app_colors.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
+import '../ui/screen_header.dart';
 import 'cotizacion_controller.dart';
 import 'cotizacion_detalle_screen.dart';
 
@@ -240,25 +241,50 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Cotizaciones',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.text,
-                  ),
+                ScreenHeader(
+                  icono: Icons.request_quote_outlined,
+                  titulo: 'Cotizaciones',
+                  subtitulo: 'Gestión de cotizaciones',
+                  hintBuscar: 'Buscar cotización...',
+                  searchController: _search,
+                  onSearch: _onSearch,
+                  filtros: [
+                    FilterChipData(
+                      label: 'Todas',
+                      bgColor: const Color(0xFFE2E8F0),
+                      fgColor: const Color(0xFF475569),
+                      selected: controller.estadoFiltro == null,
+                      onTap: () => controller.filtrarPorEstado(null),
+                    ),
+                    FilterChipData(
+                      label: 'En Espera',
+                      bgColor: const Color(0xFFFEF3C7),
+                      fgColor: const Color(0xFFB45309),
+                      selected:
+                          controller.estadoFiltro == EstadoCotizacion.enEspera,
+                      onTap: () => controller
+                          .filtrarPorEstado(EstadoCotizacion.enEspera),
+                    ),
+                    FilterChipData(
+                      label: 'Aceptada',
+                      bgColor: const Color(0xFFDCFCE7),
+                      fgColor: const Color(0xFF047857),
+                      selected: controller.estadoFiltro ==
+                          EstadoCotizacion.convertida,
+                      onTap: () => controller
+                          .filtrarPorEstado(EstadoCotizacion.convertida),
+                    ),
+                    FilterChipData(
+                      label: 'Anulada',
+                      bgColor: const Color(0xFFFEE2E2),
+                      fgColor: const Color(0xFFB91C1C),
+                      selected:
+                          controller.estadoFiltro == EstadoCotizacion.anulada,
+                      onTap: () =>
+                          controller.filtrarPorEstado(EstadoCotizacion.anulada),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: _search,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: 'Buscar cotización...',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: _onSearch,
-                ),
-                const SizedBox(height: 14),
                 Expanded(child: _buildContent(controller)),
               ],
             ),
@@ -521,6 +547,41 @@ class _CotizacionCard extends StatelessWidget {
             const Divider(height: 1),
             const SizedBox(height: 10),
 
+            // ── Servicios (chips) ──────────────────────────────────────────
+            if (c.servicios.isNotEmpty) ...[
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: c.servicios
+                    .map((s) => Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color:
+                                    AppColors.primary.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            s.cantidad > 1
+                                ? '${s.servicio.nombre} x${s.cantidad}'
+                                : s.servicio.nombre,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+              const SizedBox(height: 10),
+            ],
+
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+
             Row(
               children: [
                 Expanded(
@@ -542,29 +603,6 @@ class _CotizacionCard extends StatelessWidget {
                             : 'No calculado',
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
-                          color: AppColors.text,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Servicios',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${c.servicios.length} servicio${c.servicios.length != 1 ? 's' : ''}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
                           color: AppColors.text,
                         ),
                       ),

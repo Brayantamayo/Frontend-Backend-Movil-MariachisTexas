@@ -228,12 +228,12 @@ class _LoginScreenState extends State<LoginScreen>
           const SizedBox(height: 5),
 
           Text(
-            'INGRESA TUS CREDENCIALES',
+            'Ingresa tus credenciales',
             style: GoogleFonts.dmSans(
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: FontWeight.w500,
               color: const Color(0xFF888888),
-              letterSpacing: 3.5,
+              letterSpacing: 0.5,
             ),
           ),
 
@@ -285,7 +285,7 @@ class _LoginScreenState extends State<LoginScreen>
           const SizedBox(height: 18),
 
           _buildField(
-            label: 'Correo electrónico',
+            label: 'Correo electrónico *',
             controller: _email,
             hint: 'admin@mariachi.com',
             icon: Icons.mail_outline_rounded,
@@ -297,7 +297,7 @@ class _LoginScreenState extends State<LoginScreen>
           const SizedBox(height: 16),
 
           _buildField(
-            label: 'Contraseña',
+            label: 'Contraseña *',
             controller: _password,
             hint: '••••••••',
             icon: Icons.lock_outline_rounded,
@@ -512,13 +512,25 @@ class _LoginScreenState extends State<LoginScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label.toUpperCase(),
-          style: GoogleFonts.dmSans(
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-            color: labelColor ?? const Color(0xFF888888),
-            letterSpacing: 1.4,
+        RichText(
+          text: TextSpan(
+            style: GoogleFonts.dmSans(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: labelColor ?? const Color(0xFF888888),
+              letterSpacing: 1.4,
+            ),
+            children: [
+              TextSpan(text: label.replaceAll(' *', '')),
+              if (label.endsWith(' *'))
+                const TextSpan(
+                  text: ' *',
+                  style: TextStyle(
+                    color: _red,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+            ],
           ),
         ),
         const SizedBox(height: 7),

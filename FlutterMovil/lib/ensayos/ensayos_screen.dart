@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/app_colors.dart';
 import '../core/models/app_models.dart';
+import '../ui/screen_header.dart';
 import 'ensayo_controller.dart';
 import 'ensayo_detalle_screen.dart';
 
@@ -156,15 +157,41 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Ensayos',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.text,
-                  ),
+                ScreenHeader(
+                  icono: Icons.music_note_outlined,
+                  titulo: 'Ensayos',
+                  subtitulo: 'Calendario de ensayos',
+                  hintBuscar: '',
+                  searchController: TextEditingController(),
+                  onSearch: (_) {},
+                  mostrarBuscar: false,
+                  filtros: [
+                    FilterChipData(
+                      label: 'Todos',
+                      bgColor: const Color(0xFFE2E8F0),
+                      fgColor: const Color(0xFF475569),
+                      selected: controller.estadoFiltro == null,
+                      onTap: () => controller.filtrarPorEstado(null),
+                    ),
+                    FilterChipData(
+                      label: 'Pendiente',
+                      bgColor: const Color(0xFFFEF3C7),
+                      fgColor: const Color(0xFFB45309),
+                      selected:
+                          controller.estadoFiltro == EstadoEnsayo.pendiente,
+                      onTap: () =>
+                          controller.filtrarPorEstado(EstadoEnsayo.pendiente),
+                    ),
+                    FilterChipData(
+                      label: 'Listo',
+                      bgColor: const Color(0xFFDCFCE7),
+                      fgColor: const Color(0xFF047857),
+                      selected: controller.estadoFiltro == EstadoEnsayo.listo,
+                      onTap: () =>
+                          controller.filtrarPorEstado(EstadoEnsayo.listo),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
                 _buildCalendar(controller),
                 const SizedBox(height: 10),
                 Expanded(child: _buildEnsayosList(controller)),
@@ -325,18 +352,28 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
                   ),
                   if (ensayosDelDia.isNotEmpty)
                     Positioned(
-                      bottom: 4,
+                      bottom: 2,
                       left: 0,
                       right: 0,
                       child: Center(
-                        child: Container(
-                          width: 4,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color:
-                                isSelected ? Colors.white : AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: ensayosDelDia.take(3).map((ensayo) {
+                            final color = isSelected
+                                ? Colors.white
+                                : ensayo.estado == EstadoEnsayo.listo
+                                    ? const Color(0xFF047857)
+                                    : const Color(0xFFB45309);
+                            return Container(
+                              width: 4,
+                              height: 4,
+                              margin: const EdgeInsets.symmetric(horizontal: 1),
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ),
                     ),

@@ -55,8 +55,8 @@ class _RepertorioScreenState extends State<RepertorioScreen> {
     _subs.add(p.onPlayerComplete.listen((_) {
       if (mounted)
         setState(() {
-        _playingId = null;
-        _position = Duration.zero;
+          _playingId = null;
+          _position = Duration.zero;
         });
     }));
   }
@@ -131,13 +131,7 @@ class _RepertorioScreenState extends State<RepertorioScreen> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFF0F0), Color(0xFFFAFAFA)],
-        ),
-      ),
+      color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -296,8 +290,8 @@ class _MiniPlayer extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primary, const Color(0xFFE53E3E)],
+        gradient: const LinearGradient(
+          colors: [AppColors.primary, Color(0xFFE53E3E)],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
@@ -453,8 +447,7 @@ class _Body extends StatelessWidget {
               onPressed: () => context.read<RepertorioController>().cargar(),
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
-              style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
             ),
           ],
         ),
@@ -620,9 +613,7 @@ class _CancionCard extends StatelessWidget {
                     ),
                     child: Icon(
                       isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: isPlaying
-                          ? Colors.white
-                          : (AppColors.primary),
+                      color: isPlaying ? Colors.white : (AppColors.primary),
                       size: 22,
                     ),
                   ),
@@ -646,8 +637,8 @@ class _CancionCard extends StatelessWidget {
             colors: [Color(0xFFFEE2E2), Color(0xFFFECDD3)],
           ),
         ),
-        child: const Icon(Icons.music_note,
-            color: (AppColors.primary), size: 28),
+        child:
+            const Icon(Icons.music_note, color: (AppColors.primary), size: 28),
       );
 
   static Widget _chip(String text) => Container(

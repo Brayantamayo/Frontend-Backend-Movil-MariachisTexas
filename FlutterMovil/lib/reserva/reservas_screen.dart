@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../core/format/currency.dart';
 import '../core/theme/app_colors.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
+import '../ui/screen_header.dart';
 import 'reserva_controller.dart';
 import 'reserva_detalle_screen.dart';
 import 'nueva_reserva_screen.dart';
@@ -290,23 +291,59 @@ class _ReservasScreenState extends State<ReservasScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Reservas',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      color: AppColors.text,
-                    )),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: _search,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: 'Buscar reserva...',
-                    border: OutlineInputBorder(),
-                  ),
-                  onChanged: _onSearch,
+                ScreenHeader(
+                  icono: Icons.calendar_month_outlined,
+                  titulo: 'Reservas',
+                  subtitulo: 'Gestión de reservas',
+                  hintBuscar: 'Buscar reserva...',
+                  searchController: _search,
+                  onSearch: _onSearch,
+                  filtros: [
+                    FilterChipData(
+                      label: 'Todas',
+                      bgColor: const Color(0xFFE2E8F0),
+                      fgColor: const Color(0xFF475569),
+                      selected: controller.estadoFiltro == null,
+                      onTap: () => controller.filtrarPorEstado(null),
+                    ),
+                    FilterChipData(
+                      label: 'Pendiente',
+                      bgColor: const Color(0xFFFEF3C7),
+                      fgColor: const Color(0xFFB45309),
+                      selected:
+                          controller.estadoFiltro == EstadoReserva.pendiente,
+                      onTap: () =>
+                          controller.filtrarPorEstado(EstadoReserva.pendiente),
+                    ),
+                    FilterChipData(
+                      label: 'Confirmada',
+                      bgColor: const Color(0xFFDCFCE7),
+                      fgColor: const Color(0xFF047857),
+                      selected:
+                          controller.estadoFiltro == EstadoReserva.confirmada,
+                      onTap: () =>
+                          controller.filtrarPorEstado(EstadoReserva.confirmada),
+                    ),
+                    FilterChipData(
+                      label: 'Finalizado',
+                      bgColor: const Color(0xFFDBEAFE),
+                      fgColor: const Color(0xFF1D4ED8),
+                      selected:
+                          controller.estadoFiltro == EstadoReserva.finalizado,
+                      onTap: () =>
+                          controller.filtrarPorEstado(EstadoReserva.finalizado),
+                    ),
+                    FilterChipData(
+                      label: 'Anulada',
+                      bgColor: const Color(0xFFFEE2E2),
+                      fgColor: const Color(0xFFB91C1C),
+                      selected:
+                          controller.estadoFiltro == EstadoReserva.anulada,
+                      onTap: () =>
+                          controller.filtrarPorEstado(EstadoReserva.anulada),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 14),
                 Expanded(child: _buildContent(controller)),
               ],
             ),
@@ -528,6 +565,41 @@ class _ReservaCard extends StatelessWidget {
             const Divider(height: 1),
             const SizedBox(height: 10),
 
+            // ── Servicios (chips) ──────────────────────────────────────────
+            if (r.servicios.isNotEmpty) ...[
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: r.servicios
+                    .map((s) => Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                                color:
+                                    AppColors.primary.withValues(alpha: 0.3)),
+                          ),
+                          child: Text(
+                            s.cantidad > 1
+                                ? '${s.servicio.nombre} x${s.cantidad}'
+                                : s.servicio.nombre,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+              const SizedBox(height: 10),
+            ],
+
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+
             // ── Financiero ─────────────────────────────────────────────────
             Row(
               children: [
@@ -590,40 +662,6 @@ class _ReservaCard extends StatelessWidget {
                 ),
               ],
             ),
-
-            // ── Servicios (chips) ──────────────────────────────────────────
-            if (r.servicios.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              const Divider(height: 1),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: r.servicios
-                    .map((s) => Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                                color:
-                                    AppColors.primary.withValues(alpha: 0.3)),
-                          ),
-                          child: Text(
-                            s.cantidad > 1
-                                ? '${s.servicio.nombre} x${s.cantidad}'
-                                : s.servicio.nombre,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ))
-                    .toList(),
-              ),
-            ],
           ],
         ),
       ),

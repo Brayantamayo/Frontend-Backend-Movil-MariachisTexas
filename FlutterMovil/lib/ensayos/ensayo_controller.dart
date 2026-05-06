@@ -16,6 +16,8 @@ class EnsayoController extends ChangeNotifier {
 
   String _query = '';
   String get query => _query;
+  EstadoEnsayo? _estadoFiltro;
+  EstadoEnsayo? get estadoFiltro => _estadoFiltro;
 
   // ── Cargar ensayos ─────────────────────────────────────────────────────────
   Future<void> cargar() async {
@@ -36,19 +38,29 @@ class EnsayoController extends ChangeNotifier {
   // ── Buscar ensayos ─────────────────────────────────────────────────────────
   void buscar(String q) {
     _query = q;
-    if (q.trim().isEmpty) {
-      _todos = List.from(_todosOriginales);
-    } else {
-      final lower = q.toLowerCase();
-      _todos = _todosOriginales
-          .where(
-            (e) =>
-                e.nombre.toLowerCase().contains(lower) ||
-                e.lugar.toLowerCase().contains(lower) ||
-                e.estadoLabel.toLowerCase().contains(lower),
-          )
+    _aplicarFiltros();
+  }
+
+  void filtrarPorEstado(EstadoEnsayo? estado) {
+    _estadoFiltro = estado;
+    _aplicarFiltros();
+  }
+
+  void _aplicarFiltros() {
+    var lista = List<Ensayo>.from(_todosOriginales);
+    if (_estadoFiltro != null) {
+      lista = lista.where((e) => e.estado == _estadoFiltro).toList();
+    }
+    if (_query.trim().isNotEmpty) {
+      final lower = _query.toLowerCase();
+      lista = lista
+          .where((e) =>
+              e.nombre.toLowerCase().contains(lower) ||
+              e.lugar.toLowerCase().contains(lower) ||
+              e.estadoLabel.toLowerCase().contains(lower))
           .toList();
     }
+    _todos = lista;
     notifyListeners();
   }
 

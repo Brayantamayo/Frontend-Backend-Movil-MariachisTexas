@@ -16,6 +16,8 @@ class CotizacionController extends ChangeNotifier {
 
   String _query = '';
   String get query => _query;
+  EstadoCotizacion? _estadoFiltro;
+  EstadoCotizacion? get estadoFiltro => _estadoFiltro;
 
   Future<void> cargar() async {
     status = CotizacionStatus.cargando;
@@ -35,20 +37,30 @@ class CotizacionController extends ChangeNotifier {
   /// Buscar cotizaciones
   void buscar(String q) {
     _query = q;
-    if (q.trim().isEmpty) {
-      _todas = List.from(_todasOriginales);
-    } else {
-      final lower = q.toLowerCase();
-      _todas = _todasOriginales
-          .where(
-            (c) =>
-                c.clienteNombre.toLowerCase().contains(lower) ||
-                c.homenajeado.toLowerCase().contains(lower) ||
-                c.tipoEventoLabel.toLowerCase().contains(lower) ||
-                c.estadoLabel.toLowerCase().contains(lower),
-          )
+    _aplicarFiltros();
+  }
+
+  void filtrarPorEstado(EstadoCotizacion? estado) {
+    _estadoFiltro = estado;
+    _aplicarFiltros();
+  }
+
+  void _aplicarFiltros() {
+    var lista = List<Cotizacion>.from(_todasOriginales);
+    if (_estadoFiltro != null) {
+      lista = lista.where((c) => c.estado == _estadoFiltro).toList();
+    }
+    if (_query.trim().isNotEmpty) {
+      final lower = _query.toLowerCase();
+      lista = lista
+          .where((c) =>
+              c.clienteNombre.toLowerCase().contains(lower) ||
+              c.homenajeado.toLowerCase().contains(lower) ||
+              c.tipoEventoLabel.toLowerCase().contains(lower) ||
+              c.estadoLabel.toLowerCase().contains(lower))
           .toList();
     }
+    _todas = lista;
     notifyListeners();
   }
 

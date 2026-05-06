@@ -201,6 +201,11 @@ class _NuevaReservaScreenState extends State<NuevaReservaScreen> {
         _serviciosSeleccionados[servicioId] = 1;
         return;
       }
+      // Hora extra: máximo 15
+      if (svc != null && _esServicioHoraExtra(svc)) {
+        _serviciosSeleccionados[servicioId] = cantidad.clamp(1, 15);
+        return;
+      }
       _serviciosSeleccionados[servicioId] = cantidad;
     });
   }
@@ -1027,8 +1032,12 @@ class _NuevaReservaScreenState extends State<NuevaReservaScreen> {
                                       ),
                                       IconButton(
                                         icon: const Icon(Icons.add, size: 18),
-                                        onPressed: () => _actualizarCantidad(
-                                            servicio.id, cantidad + 1),
+                                        onPressed:
+                                            (_esServicioHoraExtra(servicio) &&
+                                                    cantidad >= 15)
+                                                ? null
+                                                : () => _actualizarCantidad(
+                                                    servicio.id, cantidad + 1),
                                         padding: const EdgeInsets.all(4),
                                         constraints: const BoxConstraints(
                                           minWidth: 32,

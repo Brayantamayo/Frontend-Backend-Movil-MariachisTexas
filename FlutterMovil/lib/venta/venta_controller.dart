@@ -11,9 +11,14 @@ class VentaController extends ChangeNotifier {
   List<Venta> ventas = [];
   List<Venta> _ventasFiltradas = [];
   String errorMsg = '';
+  String _query = '';
+  EstadoVenta? _estadoFiltro;
+  EstadoVenta? get estadoFiltro => _estadoFiltro;
 
   List<Venta> get ventasMostradas =>
-      _ventasFiltradas.isEmpty ? ventas : _ventasFiltradas;
+      _ventasFiltradas.isEmpty && _estadoFiltro == null && _query.isEmpty
+          ? ventas
+          : _ventasFiltradas;
 
   Future<void> cargar() async {
     status = VentaStatus.cargando;
@@ -31,16 +36,29 @@ class VentaController extends ChangeNotifier {
   }
 
   void buscar(String query) {
-    if (query.isEmpty) {
-      _ventasFiltradas = [];
-    } else {
-      _ventasFiltradas = ventas
+    _query = query;
+    _aplicarFiltros();
+  }
+
+  void filtrarPorEstado(EstadoVenta? estado) {
+    _estadoFiltro = estado;
+    _aplicarFiltros();
+  }
+
+  void _aplicarFiltros() {
+    var lista = List<Venta>.from(ventas);
+    if (_estadoFiltro != null) {
+      lista = lista.where((v) => v.estadoEnum == _estadoFiltro).toList();
+    }
+    if (_query.isNotEmpty) {
+      lista = lista
           .where((v) =>
-              v.clienteNombre.toLowerCase().contains(query.toLowerCase()) ||
-              v.clienteEmail.toLowerCase().contains(query.toLowerCase()) ||
-              v.clienteTelefono.contains(query))
+              v.clienteNombre.toLowerCase().contains(_query.toLowerCase()) ||
+              v.clienteEmail.toLowerCase().contains(_query.toLowerCase()) ||
+              v.clienteTelefono.contains(_query))
           .toList();
     }
+    _ventasFiltradas = lista;
     notifyListeners();
   }
 

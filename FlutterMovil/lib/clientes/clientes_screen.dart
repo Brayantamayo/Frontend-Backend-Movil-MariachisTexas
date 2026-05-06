@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:mariachi_admin/clientes/clientes_controller.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
 import '../core/theme/app_colors.dart';
+import '../ui/screen_header.dart';
 import 'cliente_detalle_screen.dart';
 
 class ClientesScreen extends StatefulWidget {
@@ -43,59 +44,52 @@ class _ClientesScreenState extends State<ClientesScreen> {
     final controller = context.watch<ClientesController>();
     final items = _filtered(controller.clientes);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Clientes',
-            style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                color: (AppColors.text)),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: _search,
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.search),
-              hintText: 'Buscar cliente...',
-              border: OutlineInputBorder(),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ScreenHeader(
+              icono: Icons.people_outline,
+              titulo: 'Clientes',
+              subtitulo: 'Directorio de clientes',
+              hintBuscar: 'Buscar cliente...',
+              searchController: _search,
+              onSearch: (_) => setState(() {}),
             ),
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: 14),
-          Expanded(
-            child: controller.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : controller.error != null
-                    ? Center(
-                        child: Text(controller.error!,
-                            style: const TextStyle(color: Colors.red)))
-                    : items.isEmpty
-                        ? const Center(
-                            child: Text('No se encontraron clientes.'))
-                        : ListView.separated(
-                            itemCount: items.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 12),
-                            itemBuilder: (_, i) {
-                              final c = items[i];
-                              return _ClienteCard(
-                                c: c,
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        ClienteDetalleScreen(cliente: c),
+            Expanded(
+              child: controller.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : controller.error != null
+                      ? Center(
+                          child: Text(controller.error!,
+                              style: const TextStyle(color: Colors.red)))
+                      : items.isEmpty
+                          ? const Center(
+                              child: Text('No se encontraron clientes.'))
+                          : ListView.separated(
+                              itemCount: items.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 12),
+                              itemBuilder: (_, i) {
+                                final c = items[i];
+                                return _ClienteCard(
+                                  c: c,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          ClienteDetalleScreen(cliente: c),
+                                    ),
                                   ),
-                                ),
-                              );
-                            },
-                          ),
-          ),
-        ],
+                                );
+                              },
+                            ),
+            ),
+          ],
+        ),
       ),
     );
   }

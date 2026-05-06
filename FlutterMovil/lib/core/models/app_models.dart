@@ -363,26 +363,55 @@ class Reserva {
         .map((e) {
           try {
             final m = e as Map<String, dynamic>;
-            // Formato plano del backend: {nombre/name, cantidad/quantity, precio/price}
-            // sin objeto service/servicio anidado
-            if (!m.containsKey('service') &&
-                !m.containsKey('servicio') &&
-                (m.containsKey('nombre') || m.containsKey('name'))) {
-              final nombre = (m['nombre'] ?? m['name'] ?? '') as String;
-              final precio = _parseDouble(m['precio'] ?? m['price'] ?? 0);
-              final id =
+
+            // Intentar extraer el objeto servicio de cualquier clave posible
+            final servicioRaw = m['servicio'] ??
+                m['service'] ??
+                m['tipoSerenata'] ??
+                m['serenata'];
+
+            String nombre = '';
+            double precio = 0;
+            int svcId = 0;
+
+            if (servicioRaw is Map<String, dynamic>) {
+              // Objeto anidado con el servicio
+              nombre = (servicioRaw['nombre'] ??
+                  servicioRaw['name'] ??
+                  servicioRaw['title'] ??
+                  servicioRaw['descripcion'] ??
+                  '') as String;
+              precio = _parseDouble(servicioRaw['precio'] ??
+                  servicioRaw['price'] ??
+                  servicioRaw['costo'] ??
+                  0);
+              svcId = _parseInt(servicioRaw['id'] ?? 0);
+            } else {
+              // Campos planos en el mismo objeto
+              nombre = (m['nombre'] ??
+                  m['name'] ??
+                  m['serviceName'] ??
+                  m['title'] ??
+                  '') as String;
+              precio =
+                  _parseDouble(m['precio'] ?? m['price'] ?? m['costo'] ?? 0);
+              svcId =
                   _parseInt(m['id'] ?? m['serviceId'] ?? m['servicioId'] ?? 0);
-              final cantidad = _parseInt(m['cantidad'] ?? m['quantity'] ?? 1);
-              final svc = Servicio(id: id, nombre: nombre, precio: precio);
-              return CotizacionServicio(
-                id: id,
-                cotizacionId: 0,
-                servicioId: id,
-                servicio: svc,
-                cantidad: cantidad,
-              );
             }
-            return CotizacionServicio.fromJson(m);
+
+            final cantidad =
+                _parseInt(m['cantidad'] ?? m['quantity'] ?? m['qty'] ?? 1);
+            final id = _parseInt(
+                m['id'] ?? m['serviceId'] ?? m['servicioId'] ?? svcId);
+
+            final svc = Servicio(id: svcId, nombre: nombre, precio: precio);
+            return CotizacionServicio(
+              id: id,
+              cotizacionId: 0,
+              servicioId: svcId,
+              servicio: svc,
+              cantidad: cantidad,
+            );
           } catch (_) {
             return null;
           }
@@ -709,7 +738,7 @@ EstadoCotizacion _estadoCotizacionFromString(String s) => switch (s) {
 
 String _estadoCotizacionToLabel(EstadoCotizacion e) => switch (e) {
       EstadoCotizacion.enEspera => 'En Espera',
-      EstadoCotizacion.convertida => 'Convertida',
+      EstadoCotizacion.convertida => 'Aceptada',
       EstadoCotizacion.anulada => 'Anulada',
     };
 
