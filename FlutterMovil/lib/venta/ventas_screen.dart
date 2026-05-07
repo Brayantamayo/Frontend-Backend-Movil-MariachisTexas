@@ -159,206 +159,223 @@ class _VentaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: Color(0xFFE2E8F0)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Encabezado ─────────────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: [
-                        const Icon(Icons.shopping_bag_outlined,
-                            size: 18, color: AppColors.textMuted),
-                        const SizedBox(width: 6),
-                        Text(
-                          venta.concepto ?? 'Venta #${venta.idRaw}',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.text,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ]),
-                      const SizedBox(height: 2),
-                      Text(venta.clienteNombre,
-                          style: const TextStyle(color: AppColors.textMuted)),
-                      if (venta.homenajeado != null &&
-                          venta.homenajeado!.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text('Para: ${venta.homenajeado}',
+    return InkWell(
+      onTap: onDetalle,
+      borderRadius: BorderRadius.circular(18),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Encabezado ─────────────────────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Text(
+                            '#${venta.id}',
                             style: const TextStyle(
-                                color: AppColors.textMuted, fontSize: 12)),
-                      ],
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _pillBg(),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(venta.estadoLabel,
-                      style: TextStyle(
-                        color: _pillFg(),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                      )),
-                ),
-                const SizedBox(width: 4),
-                PopupMenuButton<String>(
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(
-                      value: 'detalle',
-                      child: Row(children: [
-                        Icon(Icons.visibility_outlined, size: 18),
-                        SizedBox(width: 8),
-                        Text('Ver Detalle'),
-                      ]),
-                    ),
-                  ],
-                  onSelected: (v) {
-                    if (v == 'detalle') onDetalle();
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // ── Fecha y datos del evento ────────────────────────────────────
-            Wrap(
-              spacing: 14,
-              runSpacing: 8,
-              children: [
-                _info(Icons.calendar_month_outlined,
-                    '${venta.fechaVenta.day}/${venta.fechaVenta.month}/${venta.fechaVenta.year}'),
-                if (venta.horaInicio != null && venta.horaFin != null)
-                  _info(
-                      Icons.schedule, '${venta.horaInicio} - ${venta.horaFin}'),
-                if (venta.ubicacion != null && venta.ubicacion!.isNotEmpty)
-                  _info(Icons.place_outlined, venta.ubicacion!),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-
-            // ── Servicios (chips) ──────────────────────────────────────────
-            if (venta.servicios.isNotEmpty) ...[
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: venta.servicios
-                    .map((s) => Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                                color:
-                                    AppColors.primary.withValues(alpha: 0.3)),
-                          ),
-                          child: Text(
-                            s.cantidad > 1
-                                ? '${s.nombre} x${s.cantidad}'
-                                : s.nombre,
-                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w800,
                               fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
                             ),
                           ),
-                        ))
-                    .toList(),
-              ),
-              const SizedBox(height: 10),
-            ],
-
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-
-            // ── Financiero ─────────────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Valor Total',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textMuted,
-                            fontWeight: FontWeight.w700,
-                          )),
-                      const SizedBox(height: 2),
-                      Text(formatCop(venta.totalValor.round()),
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.text)),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Saldo Pendiente',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textMuted,
-                            fontWeight: FontWeight.w700,
-                          )),
-                      const SizedBox(height: 2),
-                      Row(children: [
-                        Text(
-                          formatCop(venta.saldoPendiente.round()),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: venta.saldoPendiente > 0
-                                ? const Color(0xFFB91C1C)
-                                : const Color(0xFF047857),
-                          ),
-                        ),
-                        if (venta.saldoPendiente == 0) ...[
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
+                                horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF047857),
-                              borderRadius: BorderRadius.circular(12),
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Text('PAGADO',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                )),
+                            child: const Text(
+                              'Venta',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
                           ),
+                        ]),
+                        const SizedBox(height: 2),
+                        Text(venta.clienteNombre,
+                            style: const TextStyle(color: AppColors.textMuted)),
+                        if (venta.homenajeado != null &&
+                            venta.homenajeado!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text('Para: ${venta.homenajeado}',
+                              style: const TextStyle(
+                                  color: AppColors.textMuted, fontSize: 12)),
                         ],
-                      ]),
-                    ],
+                      ],
+                    ),
                   ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _pillBg(),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(venta.estadoLabel,
+                        style: TextStyle(
+                          color: _pillFg(),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                        )),
+                  ),
+                  const SizedBox(width: 4),
+                  PopupMenuButton<String>(
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'detalle',
+                        child: Row(children: [
+                          Icon(Icons.visibility_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text('Ver Detalle'),
+                        ]),
+                      ),
+                    ],
+                    onSelected: (v) {
+                      if (v == 'detalle') onDetalle();
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // ── Fecha y datos del evento ────────────────────────────────────
+              Wrap(
+                spacing: 14,
+                runSpacing: 8,
+                children: [
+                  _info(Icons.calendar_month_outlined,
+                      '${venta.fechaVenta.day}/${venta.fechaVenta.month}/${venta.fechaVenta.year}'),
+                  if (venta.horaInicio != null && venta.horaFin != null)
+                    _info(Icons.schedule,
+                        '${venta.horaInicio} - ${venta.horaFin}'),
+                  if (venta.ubicacion != null && venta.ubicacion!.isNotEmpty)
+                    _info(Icons.place_outlined, venta.ubicacion!),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 10),
+
+              // ── Servicios (chips) ──────────────────────────────────────────
+              if (venta.servicios.isNotEmpty) ...[
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: venta.servicios
+                      .map((s) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.3)),
+                            ),
+                            child: Text(
+                              s.cantidad > 1
+                                  ? '${s.nombre} x${s.cantidad}'
+                                  : s.nombre,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ))
+                      .toList(),
                 ),
+                const SizedBox(height: 10),
               ],
-            ),
-          ],
+
+              const Divider(height: 1),
+              const SizedBox(height: 10),
+
+              // ── Financiero ─────────────────────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Valor Total',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w700,
+                            )),
+                        const SizedBox(height: 2),
+                        Text(formatCop(venta.totalValor.round()),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.text)),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Saldo Pendiente',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w700,
+                            )),
+                        const SizedBox(height: 2),
+                        Row(children: [
+                          Text(
+                            formatCop(venta.saldoPendiente.round()),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: venta.saldoPendiente > 0
+                                  ? const Color(0xFFB91C1C)
+                                  : const Color(0xFF047857),
+                            ),
+                          ),
+                          if (venta.saldoPendiente == 0) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF047857),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text('PAGADO',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                  )),
+                            ),
+                          ],
+                        ]),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

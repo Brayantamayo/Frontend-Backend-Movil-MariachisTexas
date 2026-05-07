@@ -8,11 +8,7 @@ import 'ensayo_controller.dart';
 
 class EnsayoDetalleScreen extends StatefulWidget {
   final int ensayoId;
-
-  const EnsayoDetalleScreen({
-    super.key,
-    required this.ensayoId,
-  });
+  const EnsayoDetalleScreen({super.key, required this.ensayoId});
 
   @override
   State<EnsayoDetalleScreen> createState() => _EnsayoDetalleScreenState();
@@ -34,10 +30,8 @@ class _EnsayoDetalleScreenState extends State<EnsayoDetalleScreen> {
       _loading = true;
       _error = null;
     });
-
     final controller = context.read<EnsayoController>();
     final ensayo = await controller.getDetalle(widget.ensayoId);
-
     setState(() {
       _loading = false;
       if (ensayo != null) {
@@ -85,18 +79,12 @@ class _EnsayoDetalleScreenState extends State<EnsayoDetalleScreen> {
         : await controller.marcarComoListo(_ensayo!.id);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success ? 'Estado actualizado exitosamente' : controller.errorMsg,
-          ),
-          backgroundColor: success ? Colors.green : AppColors.primary,
-        ),
-      );
-      if (success) {
-        // Recargar detalle para reflejar el nuevo estado
-        _cargarDetalle();
-      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            success ? 'Estado actualizado exitosamente' : controller.errorMsg),
+        backgroundColor: success ? Colors.green : AppColors.primary,
+      ));
+      if (success) _cargarDetalle();
     }
   }
 
@@ -130,14 +118,11 @@ class _EnsayoDetalleScreenState extends State<EnsayoDetalleScreen> {
 
     final success = await controller.eliminar(_ensayo!.id);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success ? 'Ensayo eliminado exitosamente' : controller.errorMsg,
-          ),
-          backgroundColor: success ? Colors.red : AppColors.primary,
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            success ? 'Ensayo eliminado exitosamente' : controller.errorMsg),
+        backgroundColor: success ? Colors.red : AppColors.primary,
+      ));
       if (success) Navigator.pop(context);
     }
   }
@@ -145,49 +130,48 @@ class _EnsayoDetalleScreenState extends State<EnsayoDetalleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(
           _ensayo != null ? 'Ensayo #${_ensayo!.id}' : 'Detalle del Ensayo',
+          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
         ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.text,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1),
+        ),
         actions: [
           if (_ensayo != null)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.white),
+              icon: const Icon(Icons.more_vert),
               itemBuilder: (_) => [
                 PopupMenuItem(
                   value: 'toggle',
-                  child: Row(
-                    children: [
-                      Icon(
-                        _ensayo!.estado == EstadoEnsayo.listo
-                            ? Icons.pending_outlined
-                            : Icons.check_circle_outline,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _ensayo!.estado == EstadoEnsayo.listo
-                            ? 'Marcar como Pendiente'
-                            : 'Marcar como Listo',
-                      ),
-                    ],
-                  ),
+                  child: Row(children: [
+                    Icon(
+                      _ensayo!.estado == EstadoEnsayo.listo
+                          ? Icons.pending_outlined
+                          : Icons.check_circle_outline,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(_ensayo!.estado == EstadoEnsayo.listo
+                        ? 'Marcar como Pendiente'
+                        : 'Marcar como Listo'),
+                  ]),
                 ),
                 const PopupMenuDivider(),
                 const PopupMenuItem(
                   value: 'eliminar',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Eliminar',
-                          style: TextStyle(color: Colors.red)),
-                    ],
-                  ),
+                  child: Row(children: [
+                    Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Eliminar', style: TextStyle(color: Colors.red)),
+                  ]),
                 ),
               ],
               onSelected: (v) {
@@ -202,311 +186,257 @@ class _EnsayoDetalleScreenState extends State<EnsayoDetalleScreen> {
   }
 
   Widget _buildBody() {
-    if (_loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
+    if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              _error!,
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(_error!,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _cargarDetalle,
-              child: const Text('Reintentar'),
-            ),
-          ],
-        ),
+              style: TextStyle(color: Colors.grey[600])),
+          const SizedBox(height: 16),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: _cargarDetalle,
+            child: const Text('Reintentar'),
+          ),
+        ]),
       );
     }
-
     if (_ensayo == null) {
       return const Center(child: Text('Ensayo no encontrado'));
     }
 
+    final e = _ensayo!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 16),
-          _buildInfoGeneral(),
-          if (_ensayo!.repertorios.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _buildRepertorio(),
-          ],
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // ── Banner estado ──────────────────────────────────────────────────
+        _EstadoBanner(ensayo: e),
+        const SizedBox(height: 16),
+
+        // ── Información del evento ─────────────────────────────────────────
+        _Seccion(
+            titulo: 'Información del Ensayo',
+            icono: Icons.music_note_outlined,
+            children: [
+              _Fila(label: 'Nombre', valor: e.nombre),
+              _Fila(
+                label: 'Fecha',
+                valor: DateFormat('dd/MM/yyyy').format(e.fechaHora),
+              ),
+              _Fila(
+                label: 'Hora',
+                valor: DateFormat('HH:mm').format(e.fechaHora),
+              ),
+              _Fila(label: 'Lugar', valor: e.lugar),
+              if (e.ubicacion != null && e.ubicacion!.isNotEmpty)
+                _Fila(label: 'Ubicación', valor: e.ubicacion!),
+              if (e.createdAt != null)
+                _Fila(
+                  label: 'Creado el',
+                  valor: DateFormat('dd/MM/yyyy').format(e.createdAt!),
+                ),
+            ]),
+        const SizedBox(height: 12),
+
+        // ── Repertorio ─────────────────────────────────────────────────────
+        if (e.repertorios.isNotEmpty) ...[
+          _Seccion(
+            titulo:
+                'Repertorio (${e.repertorios.length} canción${e.repertorios.length != 1 ? 'es' : ''})',
+            icono: Icons.queue_music_outlined,
+            children: e.repertorios.asMap().entries.map((entry) {
+              final index = entry.key + 1;
+              final rep = entry.value;
+              return _RepertorioFila(index: index, rep: rep);
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+        ],
+
+        const SizedBox(height: 12),
+      ]),
+    );
+  }
+}
+
+// ─── BANNER ───────────────────────────────────────────────────────────────────
+
+class _EstadoBanner extends StatelessWidget {
+  final Ensayo ensayo;
+  const _EstadoBanner({required this.ensayo});
+
+  Color get _bg => ensayo.estado == EstadoEnsayo.listo
+      ? const Color(0xFFDCFCE7)
+      : const Color(0xFFFEF3C7);
+
+  Color get _fg => ensayo.estado == EstadoEnsayo.listo
+      ? const Color(0xFF047857)
+      : const Color(0xFFB45309);
+
+  IconData get _icon => ensayo.estado == EstadoEnsayo.listo
+      ? Icons.check_circle_outline
+      : Icons.hourglass_empty_rounded;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration:
+          BoxDecoration(color: _bg, borderRadius: BorderRadius.circular(14)),
+      child: Row(children: [
+        Icon(_icon, color: _fg, size: 22),
+        const SizedBox(width: 10),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(
+            ensayo.estado == EstadoEnsayo.listo ? 'Listo' : 'Pendiente',
+            style: TextStyle(
+                color: _fg, fontWeight: FontWeight.w900, fontSize: 15),
+          ),
+          Text(
+            ensayo.nombre,
+            style: TextStyle(
+                color: _fg.withValues(alpha: 0.7),
+                fontSize: 12,
+                fontWeight: FontWeight.w600),
+          ),
+        ]),
+        const Spacer(),
+        Text('#${ensayo.id}',
+            style: TextStyle(
+                color: _fg.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w800,
+                fontSize: 18)),
+      ]),
+    );
+  }
+}
+
+// ─── SECCIÓN ──────────────────────────────────────────────────────────────────
+
+class _Seccion extends StatelessWidget {
+  final String titulo;
+  final IconData icono;
+  final List<Widget> children;
+  const _Seccion(
+      {required this.titulo, required this.icono, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2))
         ],
       ),
-    );
-  }
-
-  Widget _buildHeader() {
-    final e = _ensayo!;
-    final listo = e.estado == EstadoEnsayo.listo;
-    final estadoColor =
-        listo ? const Color(0xFF047857) : const Color(0xFFB45309);
-    final estadoBg =
-        listo ? const Color(0xFFDCFCE7) : const Color(0xFFFEF3C7);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    e.nombre,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      color: listo ? AppColors.textMuted : AppColors.text,
-                      decoration: listo
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: estadoBg,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: estadoColor.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Text(
-                    e.estadoLabel.toUpperCase(),
-                    style: TextStyle(
-                      color: estadoColor,
-                      fontWeight: FontWeight.w700,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
+          child: Row(children: [
+            Icon(icono, size: 18, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(titulo,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800,
                       fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
+                      color: AppColors.text)),
             ),
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 12),
-            _infoRow(
-              Icons.calendar_month_outlined,
-              'Fecha',
-              DateFormat('dd/MM/yyyy').format(e.fechaHora),
-            ),
-            const SizedBox(height: 8),
-            _infoRow(
-              Icons.schedule,
-              'Hora',
-              DateFormat('HH:mm').format(e.fechaHora),
-            ),
-            const SizedBox(height: 8),
-            _infoRow(Icons.place_outlined, 'Lugar', e.lugar),
-            if (e.ubicacion != null && e.ubicacion!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              _infoRow(Icons.map_outlined, 'Ubicación', e.ubicacion!),
-            ],
-          ],
+          ]),
         ),
-      ),
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start, children: children),
+        ),
+      ]),
     );
   }
+}
 
-  Widget _buildInfoGeneral() {
-    final e = _ensayo!;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Información General',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: AppColors.text,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _detailItem('ID del Ensayo', '#${e.id}'),
-            const SizedBox(height: 8),
-            _detailItem('Nombre', e.nombre),
-            const SizedBox(height: 8),
-            _detailItem(
-              'Fecha y Hora',
-              DateFormat('dd/MM/yyyy - HH:mm').format(e.fechaHora),
-            ),
-            const SizedBox(height: 8),
-            _detailItem('Lugar', e.lugar),
-            if (e.ubicacion != null && e.ubicacion!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              _detailItem('Ubicación', e.ubicacion!),
-            ],
-            if (e.createdAt != null) ...[
-              const SizedBox(height: 8),
-              _detailItem(
-                'Fecha de Creación',
-                DateFormat('dd/MM/yyyy - HH:mm').format(e.createdAt!),
-              ),
-            ],
-            if (e.updatedAt != null) ...[
-              const SizedBox(height: 8),
-              _detailItem(
-                'Última Actualización',
-                DateFormat('dd/MM/yyyy - HH:mm').format(e.updatedAt!),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
+// ─── FILA ─────────────────────────────────────────────────────────────────────
 
-  Widget _buildRepertorio() {
-    final e = _ensayo!;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Repertorio (${e.repertorios.length} canción${e.repertorios.length != 1 ? 'es' : ''})',
+class _Fila extends StatelessWidget {
+  final String label;
+  final String valor;
+  const _Fila({required this.label, required this.valor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(
+          width: 120,
+          child: Text(label,
               style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: AppColors.text,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...e.repertorios.asMap().entries.map(
-              (entry) {
-                final index = entry.key + 1;
-                final rep = entry.value;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '$index',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              rep.titulo,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                              ),
-                            ),
-                            Text(
-                              rep.artista,
-                              style: const TextStyle(
-                                color: AppColors.textMuted,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (rep.duracion.isNotEmpty)
-                        Text(
-                          rep.duracion,
-                          style: const TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 12,
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _infoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: AppColors.textMuted),
-        const SizedBox(width: 8),
-        Text(
-          '$label: ',
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textMuted,
-          ),
+                  fontSize: 13,
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w600)),
         ),
         Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: AppColors.text,
-            ),
-          ),
+          child: Text(valor,
+              style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.text,
+                  fontWeight: FontWeight.w500)),
         ),
-      ],
+      ]),
     );
   }
+}
 
-  Widget _detailItem(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textMuted,
-            letterSpacing: 0.5,
+// ─── FILA REPERTORIO ──────────────────────────────────────────────────────────
+
+class _RepertorioFila extends StatelessWidget {
+  final int index;
+  final Repertorio rep;
+  const _RepertorioFila({required this.index, required this.rep});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8)),
+          child: Center(
+            child: Text('$index',
+                style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13)),
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: AppColors.text,
-          ),
+        const SizedBox(width: 10),
+        Expanded(
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(rep.titulo,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: AppColors.text)),
+            Text(rep.artista,
+                style:
+                    const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+          ]),
         ),
-      ],
+        if (rep.duracion.isNotEmpty)
+          Text(rep.duracion,
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+      ]),
     );
   }
 }

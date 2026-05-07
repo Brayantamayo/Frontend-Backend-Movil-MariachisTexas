@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
 import 'cotizacion_service.dart';
+import '../core/services/servicio_service.dart';
 
 enum CotizacionStatus { inicial, cargando, listo, error }
 
@@ -14,6 +15,8 @@ class CotizacionController extends ChangeNotifier {
   List<Cotizacion> _todasOriginales = [];
   List<Cotizacion> get cotizaciones => _todas;
 
+  Map<int, Servicio> _catalogoServicios = {};
+
   String _query = '';
   String get query => _query;
   EstadoCotizacion? _estadoFiltro;
@@ -24,7 +27,16 @@ class CotizacionController extends ChangeNotifier {
     errorMsg = '';
     notifyListeners();
     try {
-      _todas = await _service.getCotizaciones();
+      // Primero cargar el catálogo
+      final servicios = await ServicioService.obtenerServicios();
+      _catalogoServicios = {for (final s in servicios) s.id: s};
+
+      // Luego cargar cotizaciones y enriquecer cada una igual que el detalle
+      final rawList = await _service.getCotizacionesRaw();
+      _todas = rawList.map((j) {
+        final c = Cotizacion.fromJson(j);
+        return _enriquecerDesdeJson(c, j);
+      }).toList();
       _todasOriginales = List.from(_todas);
       status = CotizacionStatus.listo;
     } catch (e) {
@@ -33,6 +45,41 @@ class CotizacionController extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  Cotizacion _enriquecerDesdeJson(Cotizacion c, Map<String, dynamic> j) {
+    final svcsRaw = j['selectedServices'] ?? j['services'];
+    if (svcsRaw == null) return c;
+    final chips = <VentaServicio>[];
+    try {
+      for (final item in svcsRaw) {
+        try {
+          // Convertir cada item a Map<String, dynamic> de forma segura
+          final m = <String, dynamic>{};
+          (item as Map).forEach((k, v) => m[k.toString()] = v);
+          final id = _parseInt(m['serviceId']);
+          final qty = _parseInt(m['quantity'] ?? 1);
+          final svc = _catalogoServicios[id];
+          chips.add(VentaServicio(
+            nombre: svc?.nombre ?? 'Servicio $id',
+            cantidad: qty,
+            precio: svc?.precio ?? 0,
+          ));
+        } catch (_) {}
+      }
+    } catch (_) {}
+    if (chips.isEmpty) return c;
+    return c.copyWithChips(chips);
+  }
+
+  Future<void> _cargarCatalogoSiVacio() async {
+    if (_catalogoServicios.isNotEmpty) return;
+    try {
+      final servicios = await ServicioService.obtenerServicios();
+      _catalogoServicios = {for (final s in servicios) s.id: s};
+    } catch (_) {}
+  }
+
+  int _parseInt(dynamic v) => v is int ? v : int.tryParse(v.toString()) ?? 0;
 
   /// Buscar cotizaciones
   void buscar(String q) {
@@ -67,7 +114,10 @@ class CotizacionController extends ChangeNotifier {
   /// Obtener detalle de una cotización
   Future<Cotizacion?> getDetalle(int id) async {
     try {
-      return await _service.getCotizacionById(id);
+      await _cargarCatalogoSiVacio();
+      final j = await _service.getCotizacionByIdRaw(id);
+      final c = Cotizacion.fromJson(j);
+      return _enriquecerDesdeJson(c, j);
     } catch (e) {
       errorMsg = e.toString().replaceFirst('Exception: ', '');
       notifyListeners();

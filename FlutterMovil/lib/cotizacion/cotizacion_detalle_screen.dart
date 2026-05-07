@@ -4,6 +4,7 @@ import '../core/format/currency.dart';
 import '../core/theme/app_colors.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
 import 'cotizacion_controller.dart';
+import 'cotizacion_pdf.dart';
 
 class CotizacionDetalleScreen extends StatefulWidget {
   final int cotizacionId;
@@ -44,6 +45,20 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
     });
   }
 
+  Future<void> _descargarPdf() async {
+    if (_cotizacion == null) return;
+    try {
+      await descargarCotizacionPdf(_cotizacion!);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error al generar PDF: $e'),
+          backgroundColor: AppColors.primary,
+        ));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,6 +78,15 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
           preferredSize: Size.fromHeight(1),
           child: Divider(height: 1),
         ),
+        actions: [
+          if (_cotizacion != null)
+            IconButton(
+              icon: const Icon(Icons.picture_as_pdf_outlined,
+                  color: Color(0xFFB91C1C)),
+              tooltip: 'Descargar PDF',
+              onPressed: _descargarPdf,
+            ),
+        ],
       ),
       body: _buildBody(),
     );
@@ -132,12 +156,12 @@ class _CotizacionDetalleScreenState extends State<CotizacionDetalleScreen> {
         const SizedBox(height: 12),
 
         // ── Servicios ──────────────────────────────────────────────────────
-        if (c.servicios.isNotEmpty) ...[
+        if (c.chips.isNotEmpty) ...[
           _Seccion(
             titulo: 'Servicios',
             icono: Icons.music_note_outlined,
             children: [
-              ...c.servicios.map((s) => _ServicioFila(servicio: s)),
+              ...c.chips.map((s) => _ChipServicioFila(servicio: s)),
               const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
                   child: Divider(height: 1)),
@@ -400,52 +424,6 @@ class _FilaFinanciera extends StatelessWidget {
   }
 }
 
-// ─── FILA SERVICIO ────────────────────────────────────────────────────────────
-
-class _ServicioFila extends StatelessWidget {
-  final CotizacionServicio servicio;
-  const _ServicioFila({required this.servicio});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(children: [
-        Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8)),
-          child:
-              const Icon(Icons.music_note, size: 17, color: AppColors.primary),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(servicio.servicio.nombre,
-                style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: AppColors.text)),
-            if (servicio.cantidad > 1)
-              Text(
-                  'x${servicio.cantidad}  ${formatCop(servicio.servicio.precio.round())} c/u',
-                  style: const TextStyle(
-                      fontSize: 12, color: AppColors.textMuted)),
-          ]),
-        ),
-        Text(formatCop(servicio.subtotal.round()),
-            style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                color: AppColors.text)),
-      ]),
-    );
-  }
-}
-
 // ─── FILA REPERTORIO ──────────────────────────────────────────────────────────
 
 class _RepertorioFila extends StatelessWidget {
@@ -488,6 +466,52 @@ class _RepertorioFila extends StatelessWidget {
         if (item.repertorio.duracion.isNotEmpty)
           Text(item.repertorio.duracion,
               style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+      ]),
+    );
+  }
+}
+
+// ─── FILA CHIP SERVICIO (VentaServicio) ───────────────────────────────────────
+
+class _ChipServicioFila extends StatelessWidget {
+  final VentaServicio servicio;
+  const _ChipServicioFila({required this.servicio});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8)),
+          child:
+              const Icon(Icons.music_note, size: 17, color: AppColors.primary),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(servicio.nombre,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: AppColors.text)),
+            if (servicio.cantidad > 1)
+              Text(
+                  'x${servicio.cantidad}  ${formatCop(servicio.precio.round())} c/u',
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.textMuted)),
+          ]),
+        ),
+        Text(formatCop(servicio.subtotal.round()),
+            style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: AppColors.text)),
       ]),
     );
   }

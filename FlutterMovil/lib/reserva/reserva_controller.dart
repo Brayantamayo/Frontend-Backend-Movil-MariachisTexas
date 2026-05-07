@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
 import 'reserva_service.dart';
+import '../core/services/servicio_service.dart';
 
 enum ReservaStatus { inicial, cargando, listo, error }
 
@@ -14,6 +15,9 @@ class ReservaController extends ChangeNotifier {
   List<Reserva> _todasOriginales = [];
   List<Reserva> get reservas => _todas;
 
+  // Catálogo de servicios para resolver nombres por ID
+  Map<int, Servicio> _catalogoServicios = {};
+
   String _query = '';
   String get query => _query;
 
@@ -25,7 +29,16 @@ class ReservaController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _todas = await _service.getReservas();
+      // Cargar catálogo de servicios y reservas en paralelo
+      final results = await Future.wait([
+        ServicioService.obtenerServicios(),
+        _service.getReservas(),
+      ]);
+      final servicios = (results[0] as List).cast<Servicio>();
+      _catalogoServicios = {for (final s in servicios) s.id: s};
+
+      final reservas = (results[1] as List).cast<Reserva>();
+      _todas = reservas.map((r) => _enriquecerReserva(r)).toList();
       _todasOriginales = List.from(_todas);
       status = ReservaStatus.listo;
     } catch (e) {
@@ -35,6 +48,32 @@ class ReservaController extends ChangeNotifier {
 
     notifyListeners();
   }
+
+  /// Enriquece una reserva resolviendo los nombres de servicios por ID
+  Reserva _enriquecerReserva(Reserva r) {
+    if (r.serviciosRaw.isEmpty) return r;
+    final chipsNuevos = r.serviciosRaw.map((raw) {
+      final id = _parseInt(raw['serviceId']);
+      final qty = _parseInt(raw['quantity'] ?? 1);
+      final servicio = _catalogoServicios[id];
+      return VentaServicio(
+        nombre: servicio?.nombre ?? 'Servicio $id',
+        cantidad: qty,
+        precio: servicio?.precio ?? 0,
+      );
+    }).toList();
+    return r.copyWithChips(chipsNuevos);
+  }
+
+  Future<void> _cargarCatalogoSiVacio() async {
+    if (_catalogoServicios.isNotEmpty) return;
+    try {
+      final servicios = await ServicioService.obtenerServicios();
+      _catalogoServicios = {for (final s in servicios) s.id: s};
+    } catch (_) {}
+  }
+
+  int _parseInt(dynamic v) => v is int ? v : int.tryParse(v.toString()) ?? 0;
 
   // ── Búsqueda ───────────────────────────────────────────────────────────────
 
@@ -74,7 +113,9 @@ class ReservaController extends ChangeNotifier {
 
   Future<Reserva?> getDetalle(int id) async {
     try {
-      return await _service.getReservaById(id);
+      await _cargarCatalogoSiVacio();
+      final r = await _service.getReservaById(id);
+      return _enriquecerReserva(r);
     } catch (e) {
       errorMsg = e.toString().replaceFirst('Exception: ', '');
       notifyListeners();

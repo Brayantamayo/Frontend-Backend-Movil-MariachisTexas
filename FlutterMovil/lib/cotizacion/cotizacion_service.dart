@@ -25,6 +25,33 @@ class CotizacionService {
     return storage.read(key: 'token');
   }
 
+  // ── Obtener todas las cotizaciones (JSON crudo) ────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getCotizacionesRaw() async {
+    final token = await _getToken();
+    if (token == null) throw Exception('No autenticado');
+
+    final uri = Uri.parse(Env.endpoint('cotizaciones'));
+
+    final response = await http
+        .get(uri, headers: NetworkConfig.authHeaders(token))
+        .timeout(NetworkConfig.timeout);
+
+    if (response.statusCode == 200) {
+      // Usar jsonDecode y luego iterar sin cast de tipo
+      final dynamic decoded = jsonDecode(response.body);
+      final result = <Map<String, dynamic>>[];
+      for (final item in decoded) {
+        final m = <String, dynamic>{};
+        (item as Map).forEach((k, v) => m[k.toString()] = v);
+        result.add(m);
+      }
+      return result;
+    } else {
+      throw Exception('Error al cargar cotizaciones');
+    }
+  }
+
   // ── Obtener todas las cotizaciones ─────────────────────────────────────────
 
   Future<List<Cotizacion>> getCotizaciones() async {
@@ -40,6 +67,11 @@ class CotizacionService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
+        if (data.isNotEmpty) {
+          final primera = data.first as Map<String, dynamic>;
+          print('=== DEBUG COTIZACION COMPLETA: $primera');
+          print('=== DEBUG COTIZACION SERVICES: ${primera['services']}');
+        }
         return data
             .map((e) => Cotizacion.fromJson(e as Map<String, dynamic>))
             .toList();
@@ -75,6 +107,25 @@ class CotizacionService {
       }
     } catch (e) {
       rethrow;
+    }
+  }
+
+  // ── Obtener detalle de cotización (JSON crudo) ────────────────────────────
+
+  Future<Map<String, dynamic>> getCotizacionByIdRaw(int id) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('No autenticado');
+
+    final uri = Uri.parse(Env.endpoint('cotizaciones/$id'));
+
+    final response = await http
+        .get(uri, headers: NetworkConfig.authHeaders(token))
+        .timeout(NetworkConfig.timeout);
+
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(jsonDecode(response.body) as Map);
+    } else {
+      throw Exception('Error al obtener detalle');
     }
   }
 

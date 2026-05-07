@@ -115,9 +115,9 @@ class Servicio {
 
   factory Servicio.fromJson(Map<String, dynamic> j) => Servicio(
         id: _parseInt(j['id']),
-        nombre: j['nombre'] as String,
-        descripcion: j['descripcion'] as String?,
-        precio: _parseDouble(j['precio']),
+        nombre: (j['nombre'] ?? j['name'] ?? j['title'] ?? '') as String,
+        descripcion: (j['descripcion'] ?? j['description']) as String?,
+        precio: _parseDouble(j['precio'] ?? j['price'] ?? j['costo'] ?? 0),
       );
 }
 
@@ -141,16 +141,36 @@ class CotizacionServicio {
     // Formato A: { id, cotizacionId, servicioId, servicio: {...}, cantidad }
     // Formato B: { id, serviceId, service: {...}, quantity }
     // Formato C: { serviceId, quantity, service: {...} }
+    // Formato D (igual que VentaServicio): { nombre/name, cantidad/quantity, precio/price }
     final servicioRaw = j['servicio'] ?? j['service'];
     final Servicio servicio;
-    if (servicioRaw != null) {
-      servicio = Servicio.fromJson(servicioRaw as Map<String, dynamic>);
+    if (servicioRaw is Map<String, dynamic>) {
+      // Objeto anidado — buscar nombre en todas las claves posibles
+      final nombre = (servicioRaw['nombre'] ??
+          servicioRaw['name'] ??
+          servicioRaw['title'] ??
+          servicioRaw['descripcion'] ??
+          servicioRaw['description'] ??
+          '') as String;
+      final precio = _parseDouble(servicioRaw['precio'] ??
+          servicioRaw['price'] ??
+          servicioRaw['costo'] ??
+          0);
+      final id = _parseInt(servicioRaw['id'] ?? 0);
+      servicio = Servicio(id: id, nombre: nombre, precio: precio);
     } else {
-      // Fallback: construir servicio desde los campos planos
-      final id = _parseInt(j['serviceId'] ?? j['servicioId'] ?? j['id'] ?? 0);
-      final nombre =
-          (j['nombre'] ?? j['name'] ?? j['serviceName'] ?? '') as String;
-      final precio = _parseDouble(j['precio'] ?? j['price'] ?? 0);
+      // Sin objeto anidado — leer campos planos directamente (igual que VentaServicio)
+      final nombre = (j['nombre'] ??
+          j['name'] ??
+          j['serviceName'] ??
+          j['service_name'] ??
+          j['title'] ??
+          j['description'] ??
+          '') as String;
+      final precio = _parseDouble(
+          j['precio'] ?? j['price'] ?? j['costo'] ?? j['cost'] ?? 0);
+      final id = _parseInt(
+          j['id'] ?? j['serviceId'] ?? j['servicioId'] ?? j['service_id'] ?? 0);
       servicio = Servicio(id: id, nombre: nombre, precio: precio);
     }
     return CotizacionServicio(
@@ -287,6 +307,8 @@ class Reserva {
   final String ubicacion;
   final List<Abono> abonos;
   final List<CotizacionServicio> servicios;
+  final List<VentaServicio> chips;
+  final List<Map<String, dynamic>> serviciosRaw;
 
   const Reserva({
     required this.id,
@@ -305,7 +327,30 @@ class Reserva {
     required this.ubicacion,
     this.abonos = const [],
     this.servicios = const [],
+    this.chips = const [],
+    this.serviciosRaw = const [],
   });
+
+  Reserva copyWithChips(List<VentaServicio> newChips) => Reserva(
+        id: id,
+        cotizacionId: cotizacionId,
+        estado: estado,
+        totalValor: totalValor,
+        saldoPendiente: saldoPendiente,
+        clienteNombre: clienteNombre,
+        clienteEmail: clienteEmail,
+        clienteTelefono: clienteTelefono,
+        homenajeado: homenajeado,
+        tipoEvento: tipoEvento,
+        fechaEvento: fechaEvento,
+        horaInicio: horaInicio,
+        horaFin: horaFin,
+        ubicacion: ubicacion,
+        abonos: abonos,
+        servicios: servicios,
+        chips: newChips,
+        serviciosRaw: serviciosRaw,
+      );
 
   factory Reserva.fromJson(Map<String, dynamic> j) {
     // Los servicios pueden venir directamente o dentro de cotizacion/quotation
@@ -337,11 +382,13 @@ class Reserva {
       horaInicio: (j['startTime'] as String?) ?? '',
       horaFin: (j['endTime'] as String?) ?? '',
       ubicacion: (j['location'] as String?) ?? '',
-      abonos: (j['payments'] as List<dynamic>?)
+      abonos: (j['payments'] as List?)
               ?.map((e) => Abono.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       servicios: _parseServicios(serviciosRaw),
+      chips: _parseVentaServicios(serviciosRaw),
+      serviciosRaw: _toRawList(serviciosRaw),
     );
   }
 
@@ -375,28 +422,41 @@ class Reserva {
             int svcId = 0;
 
             if (servicioRaw is Map<String, dynamic>) {
-              // Objeto anidado con el servicio
+              // Objeto anidado con el servicio — probar todas las claves posibles
               nombre = (servicioRaw['nombre'] ??
                   servicioRaw['name'] ??
                   servicioRaw['title'] ??
                   servicioRaw['descripcion'] ??
+                  servicioRaw['description'] ??
                   '') as String;
               precio = _parseDouble(servicioRaw['precio'] ??
                   servicioRaw['price'] ??
                   servicioRaw['costo'] ??
+                  servicioRaw['cost'] ??
                   0);
               svcId = _parseInt(servicioRaw['id'] ?? 0);
-            } else {
-              // Campos planos en el mismo objeto
+            }
+
+            // Si el nombre sigue vacío, buscar en campos planos del objeto raíz
+            if (nombre.isEmpty) {
               nombre = (m['nombre'] ??
                   m['name'] ??
                   m['serviceName'] ??
+                  m['service_name'] ??
                   m['title'] ??
+                  m['description'] ??
                   '') as String;
-              precio =
-                  _parseDouble(m['precio'] ?? m['price'] ?? m['costo'] ?? 0);
-              svcId =
-                  _parseInt(m['id'] ?? m['serviceId'] ?? m['servicioId'] ?? 0);
+            }
+            if (precio == 0) {
+              precio = _parseDouble(
+                  m['precio'] ?? m['price'] ?? m['costo'] ?? m['cost'] ?? 0);
+            }
+            if (svcId == 0) {
+              svcId = _parseInt(m['id'] ??
+                  m['serviceId'] ??
+                  m['servicioId'] ??
+                  m['service_id'] ??
+                  0);
             }
 
             final cantidad =
@@ -528,7 +588,7 @@ class Venta {
         homenajeado: (j['homenajeado']) as String?,
         notas: (j['notes'] ?? j['notas']) as String?,
         servicios: _parseVentaServicios(j['services'] ?? j['servicios']),
-        abonos: (j['abonos'] as List<dynamic>?)
+        abonos: (j['abonos'] as List?)
                 ?.map((e) => Abono.fromJson(e as Map<String, dynamic>))
                 .toList() ??
             [],
@@ -538,9 +598,35 @@ class Venta {
   String get estadoLabel => _estadoVentaToLabel(estadoEnum);
 }
 
+List<Map<String, dynamic>> _toRawList(dynamic raw) {
+  if (raw == null) return [];
+  List items;
+  try {
+    items = raw as List;
+  } catch (_) {
+    return [];
+  }
+  return items
+      .map((e) {
+        try {
+          return Map<String, dynamic>.from(e as Map);
+        } catch (_) {
+          return null;
+        }
+      })
+      .whereType<Map<String, dynamic>>()
+      .toList();
+}
+
 List<VentaServicio> _parseVentaServicios(dynamic raw) {
-  if (raw == null || raw is! List) return [];
-  return (raw)
+  if (raw == null) return [];
+  List items;
+  try {
+    items = raw as List;
+  } catch (_) {
+    return [];
+  }
+  return items
       .map((e) {
         try {
           return VentaServicio.fromJson(e as Map<String, dynamic>);
@@ -572,6 +658,8 @@ class Cotizacion {
   EstadoCotizacion estado;
   final DateTime createdAt;
   final List<CotizacionServicio> servicios;
+  final List<VentaServicio> chips;
+  final List<Map<String, dynamic>> serviciosRaw;
   final List<CotizacionRepertorio> repertorios;
   final Reserva? reserva;
 
@@ -593,9 +681,35 @@ class Cotizacion {
     required this.estado,
     required this.createdAt,
     this.servicios = const [],
+    this.chips = const [],
+    this.serviciosRaw = const [],
     this.repertorios = const [],
     this.reserva,
   });
+
+  Cotizacion copyWithChips(List<VentaServicio> newChips) => Cotizacion(
+        id: id,
+        clienteId: clienteId,
+        clienteNombre: clienteNombre,
+        clienteEmail: clienteEmail,
+        clienteTelefono: clienteTelefono,
+        homenajeado: homenajeado,
+        tipoEvento: tipoEvento,
+        fechaEvento: fechaEvento,
+        horaInicio: horaInicio,
+        horaFin: horaFin,
+        ubicacion: ubicacion,
+        notas: notas,
+        totalEstimado: totalEstimado,
+        esReservaDirecta: esReservaDirecta,
+        estado: estado,
+        createdAt: createdAt,
+        servicios: servicios,
+        chips: newChips,
+        serviciosRaw: serviciosRaw,
+        repertorios: repertorios,
+        reserva: reserva,
+      );
 
   factory Cotizacion.fromJson(Map<String, dynamic> j) => Cotizacion(
         id: _parseInt(j['id']),
@@ -615,16 +729,20 @@ class Cotizacion {
         estado:
             _estadoCotizacionFromString(j['status'] as String? ?? 'EN_ESPERA'),
         createdAt: DateTime.parse(j['createdAt'] as String),
-        servicios: (j['services'] as List<dynamic>?)
-                ?.map((e) =>
+        servicios: (j['selectedServices'] ?? j['services']) is List
+            ? ((j['selectedServices'] ?? j['services']) as List)
+                .map((e) =>
                     CotizacionServicio.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            [],
-        repertorios: (j['repertoire'] as List<dynamic>?)
-                ?.map((e) =>
+                .toList()
+            : [],
+        chips: _parseVentaServicios(j['selectedServices'] ?? j['services']),
+        serviciosRaw: _toRawList(j['selectedServices'] ?? j['services']),
+        repertorios: (j['repertoire']) is List
+            ? ((j['repertoire']) as List)
+                .map((e) =>
                     CotizacionRepertorio.fromJson(e as Map<String, dynamic>))
-                .toList() ??
-            [],
+                .toList()
+            : [],
         reserva: j['reservation'] != null
             ? Reserva.fromJson(j['reservation'] as Map<String, dynamic>)
             : null,
@@ -648,6 +766,8 @@ class Cotizacion {
         estado: estado ?? this.estado,
         createdAt: createdAt,
         servicios: servicios,
+        chips: chips,
+        serviciosRaw: serviciosRaw,
         repertorios: repertorios,
         reserva: reserva,
       );
@@ -712,9 +832,9 @@ class Ensayo {
             j['estado'] ??
             j['state'] ??
             'PENDIENTE') as String),
-        repertorios: (j['repertoires'] as List<dynamic>? ??
-                    j['repertorios'] as List<dynamic>? ??
-                    j['songs'] as List<dynamic>?)
+        repertorios: (j['repertoires'] as List? ??
+                    j['repertorios'] as List? ??
+                    j['songs'] as List?)
                 ?.map((e) {
               final data = e['repertorio'] ?? e['repertoire'] ?? e['song'] ?? e;
               return Repertorio.fromJson(data as Map<String, dynamic>);

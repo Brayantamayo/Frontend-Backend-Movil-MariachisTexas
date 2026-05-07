@@ -47,6 +47,13 @@ class ReservaService {
         final primera = data.first as Map<String, dynamic>;
         // Log completo para diagnóstico — ver en consola del navegador
         print('=== DEBUG RESERVA COMPLETA: $primera');
+        // Debug específico de servicios
+        final svcs = primera['selectedServices'] ??
+            primera['services'] ??
+            primera['tiposSerenata'] ??
+            primera['reservationServices'] ??
+            [];
+        print('=== DEBUG SERVICIOS RAW: $svcs');
       }
       return data
           .map((e) => Reserva.fromJson(e as Map<String, dynamic>))
@@ -83,6 +90,18 @@ class ReservaService {
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       print('=== DEBUG RESERVA DETALLE: $json');
+      // Debug específico de servicios del detalle
+      final svcs = json['selectedServices'] ??
+          json['services'] ??
+          json['tiposSerenata'] ??
+          json['reservationServices'] ??
+          [];
+      print('=== DEBUG DETALLE SERVICIOS: $svcs');
+      if (svcs is List && svcs.isNotEmpty) {
+        print(
+            '=== DEBUG PRIMER SERVICIO KEYS: ${(svcs.first as Map).keys.toList()}');
+        print('=== DEBUG PRIMER SERVICIO: ${svcs.first}');
+      }
       return Reserva.fromJson(json);
     }
 

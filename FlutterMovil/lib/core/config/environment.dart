@@ -13,24 +13,13 @@ class Environment {
     required this.apiVersion,
   });
 
-  // ⚠️ Cambia _localIP por tu IP si usas dispositivo físico
-  static const String _localIP = 'http://192.168.18.158:3000';
-  static const String _localhost = 'http://localhost:3000';
-
-  /// Detecta automáticamente la URL según la plataforma
-  static Environment get current => const Environment(
-        name: 'development',
-        apiUrl: kIsWeb
-            ? _localhost // Chrome / web
-            : _localIP, // Dispositivo físico (cambia a _emulator si usas emulador)
-        apiVersion: 'api',
-      );
 
   static const prod = Environment(
     name: 'production',
-    apiUrl: 'https://api.tudominio.com',
-    apiVersion: 'v1',
+    apiUrl: 'https://mariachistexas-production.up.railway.app',
+    apiVersion: 'api',
   );
+  static Environment get current => prod;
 }
 
 // Alias para compatibilidad

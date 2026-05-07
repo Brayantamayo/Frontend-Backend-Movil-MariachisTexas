@@ -424,7 +424,7 @@ class _NavItemState extends State<_NavItem>
       child: ScaleTransition(
         scale: _scale,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 2),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -434,8 +434,8 @@ class _NavItemState extends State<_NavItem>
                 builder: (context, _) {
                   final t = _pillWidth.value;
                   return Container(
-                    width: 44 + (t * 12),
-                    height: 34,
+                    width: 36 + (t * 8),
+                    height: 30,
                     decoration: BoxDecoration(
                       color: widget.selected
                           ? widget.primary.withOpacity(0.12)
@@ -445,7 +445,7 @@ class _NavItemState extends State<_NavItem>
                     alignment: Alignment.center,
                     child: Icon(
                       widget.icon,
-                      size: 22,
+                      size: 20,
                       color: widget.selected
                           ? widget.primary
                           : const Color.fromARGB(255, 114, 96, 96),

@@ -429,240 +429,250 @@ class _ReservaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: Color(0xFFE2E8F0)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Encabezado ─────────────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(children: [
-                        Text('#${r.id}',
-                            style: const TextStyle(
-                              color: AppColors.textMuted,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12,
-                            )),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            r.tipoSerenata,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.text,
+    return InkWell(
+      onTap: onDetalle,
+      borderRadius: BorderRadius.circular(18),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Encabezado ─────────────────────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Text('#${r.id}',
+                              style: const TextStyle(
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              )),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                            overflow: TextOverflow.ellipsis,
+                            child: const Text(
+                              'Reserva',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
                           ),
-                        ),
-                      ]),
-                      const SizedBox(height: 2),
-                      Text(r.clienteNombre,
-                          style: const TextStyle(color: AppColors.textMuted)),
-                      if (r.homenajeado.isNotEmpty) ...[
+                        ]),
                         const SizedBox(height: 2),
-                        Text('Para: ${r.homenajeado}',
-                            style: const TextStyle(
-                                color: AppColors.textMuted, fontSize: 12)),
+                        Text(r.clienteNombre,
+                            style: const TextStyle(color: AppColors.textMuted)),
+                        if (r.homenajeado.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text('Para: ${r.homenajeado}',
+                              style: const TextStyle(
+                                  color: AppColors.textMuted, fontSize: 12)),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _pillBg(),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(r.estadoLabel,
+                        style: TextStyle(
+                          color: _pillFg(),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                        )),
+                  ),
+                  const SizedBox(width: 8),
+                  PopupMenuButton<String>(
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                          value: 'detalle',
+                          child: Row(children: [
+                            Icon(Icons.visibility_outlined, size: 18),
+                            SizedBox(width: 8),
+                            Text('Ver Detalle'),
+                          ])),
+                      if (onAbono != null)
+                        const PopupMenuItem(
+                            value: 'abono',
+                            child: Row(children: [
+                              Icon(Icons.payments_outlined, size: 18),
+                              SizedBox(width: 8),
+                              Text('Registrar Abono'),
+                            ])),
+                      const PopupMenuItem(
+                          value: 'pdf',
+                          child: Row(children: [
+                            Icon(Icons.picture_as_pdf_outlined,
+                                size: 18, color: Color(0xFFB91C1C)),
+                            SizedBox(width: 8),
+                            Text('Descargar PDF',
+                                style: TextStyle(color: Color(0xFFB91C1C))),
+                          ])),
+                      if (onAnular != null) ...[
+                        const PopupMenuDivider(),
+                        const PopupMenuItem(
+                            value: 'anular',
+                            child: Row(children: [
+                              Icon(Icons.cancel_outlined,
+                                  size: 18, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Anular',
+                                  style: TextStyle(color: Colors.red)),
+                            ])),
                       ],
                     ],
+                    onSelected: (v) async {
+                      switch (v) {
+                        case 'detalle':
+                          onDetalle();
+                        case 'abono':
+                          onAbono?.call();
+                        case 'pdf':
+                          onPdf();
+                        case 'anular':
+                          onAnular?.call();
+                      }
+                    },
                   ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _pillBg(),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(r.estadoLabel,
-                      style: TextStyle(
-                        color: _pillFg(),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                      )),
-                ),
-                const SizedBox(width: 8),
-                PopupMenuButton<String>(
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(
-                        value: 'detalle',
-                        child: Row(children: [
-                          Icon(Icons.visibility_outlined, size: 18),
-                          SizedBox(width: 8),
-                          Text('Ver Detalle'),
-                        ])),
-                    if (onAbono != null)
-                      const PopupMenuItem(
-                          value: 'abono',
-                          child: Row(children: [
-                            Icon(Icons.payments_outlined, size: 18),
-                            SizedBox(width: 8),
-                            Text('Registrar Abono'),
-                          ])),
-                    const PopupMenuItem(
-                        value: 'pdf',
-                        child: Row(children: [
-                          Icon(Icons.picture_as_pdf_outlined,
-                              size: 18, color: Color(0xFFB91C1C)),
-                          SizedBox(width: 8),
-                          Text('Descargar PDF',
-                              style: TextStyle(color: Color(0xFFB91C1C))),
-                        ])),
-                    if (onAnular != null) ...[
-                      const PopupMenuDivider(),
-                      const PopupMenuItem(
-                          value: 'anular',
-                          child: Row(children: [
-                            Icon(Icons.cancel_outlined,
-                                size: 18, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Anular', style: TextStyle(color: Colors.red)),
-                          ])),
-                    ],
-                  ],
-                  onSelected: (v) async {
-                    switch (v) {
-                      case 'detalle':
-                        onDetalle();
-                      case 'abono':
-                        onAbono?.call();
-                      case 'pdf':
-                        onPdf();
-                      case 'anular':
-                        onAnular?.call();
-                    }
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // ── Fecha, horario, lugar ───────────────────────────────────────
-            Wrap(
-              spacing: 14,
-              runSpacing: 8,
-              children: [
-                _info(Icons.calendar_month_outlined,
-                    '${r.fechaEvento.day}/${r.fechaEvento.month}/${r.fechaEvento.year}'),
-                _info(Icons.schedule, '${r.horaInicio} - ${r.horaFin}'),
-                _info(Icons.place_outlined, r.ubicacion),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-
-            // ── Servicios (chips) ──────────────────────────────────────────
-            if (r.servicios.isNotEmpty) ...[
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: r.servicios
-                    .map((s) => Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                                color:
-                                    AppColors.primary.withValues(alpha: 0.3)),
-                          ),
-                          child: Text(
-                            s.cantidad > 1
-                                ? '${s.servicio.nombre} x${s.cantidad}'
-                                : s.servicio.nombre,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ))
-                    .toList(),
+                ],
               ),
+              const SizedBox(height: 12),
+
+              // ── Fecha, horario, lugar ───────────────────────────────────────
+              Wrap(
+                spacing: 14,
+                runSpacing: 8,
+                children: [
+                  _info(Icons.calendar_month_outlined,
+                      '${r.fechaEvento.day}/${r.fechaEvento.month}/${r.fechaEvento.year}'),
+                  _info(Icons.schedule, '${r.horaInicio} - ${r.horaFin}'),
+                  _info(Icons.place_outlined, r.ubicacion),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+              const Divider(height: 1),
               const SizedBox(height: 10),
-            ],
 
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-
-            // ── Financiero ─────────────────────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Valor Total',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textMuted,
-                              fontWeight: FontWeight.w700,
-                            )),
-                        const SizedBox(height: 2),
-                        Text(formatCop(r.totalValor.round()),
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.text)),
-                      ]),
-                ),
-                Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Saldo Pendiente',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textMuted,
-                              fontWeight: FontWeight.w700,
-                            )),
-                        const SizedBox(height: 2),
-                        Row(children: [
-                          Text(formatCop(r.saldoPendiente.round()),
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: r.saldoPendiente > 0
-                                    ? const Color(0xFFB91C1C)
-                                    : const Color(0xFF047857),
-                              )),
-                          if (r.saldoPendiente == 0) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF047857),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text('PAGADO',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.5,
-                                  )),
+              // ── Servicios (chips) ──────────────────────────────────────────
+              if (r.chips.isNotEmpty) ...[
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: r.chips
+                      .map((s) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.3)),
                             ),
-                          ],
-                        ]),
-                      ]),
+                            child: Text(
+                              s.cantidad > 1
+                                  ? '${s.nombre} x${s.cantidad}'
+                                  : s.nombre,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ))
+                      .toList(),
                 ),
+                const SizedBox(height: 10),
               ],
-            ),
-          ],
+
+              const Divider(height: 1),
+              const SizedBox(height: 10),
+
+              // ── Financiero ─────────────────────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Valor Total',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.w700,
+                              )),
+                          const SizedBox(height: 2),
+                          Text(formatCop(r.totalValor.round()),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.text)),
+                        ]),
+                  ),
+                  Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Saldo Pendiente',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.w700,
+                              )),
+                          const SizedBox(height: 2),
+                          Row(children: [
+                            Text(formatCop(r.saldoPendiente.round()),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: r.saldoPendiente > 0
+                                      ? const Color(0xFFB91C1C)
+                                      : const Color(0xFF047857),
+                                )),
+                            if (r.saldoPendiente == 0) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF047857),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text('PAGADO',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                    )),
+                              ),
+                            ],
+                          ]),
+                        ]),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

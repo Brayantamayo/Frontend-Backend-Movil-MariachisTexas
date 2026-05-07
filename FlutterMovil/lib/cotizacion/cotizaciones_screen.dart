@@ -7,6 +7,7 @@ import 'package:mariachi_admin/core/models/app_models.dart';
 import '../ui/screen_header.dart';
 import 'cotizacion_controller.dart';
 import 'cotizacion_detalle_screen.dart';
+import 'cotizacion_pdf.dart';
 
 class CotizacionesScreen extends StatefulWidget {
   const CotizacionesScreen({super.key});
@@ -178,52 +179,13 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
   }
 
   Future<void> _verPDF(Cotizacion c) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const AlertDialog(
-        content: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 16),
-            Text('Descargando PDF...'),
-          ],
-        ),
-      ),
-    );
-
     try {
-      final success = await _controller.descargarPDF(c.id);
-
-      if (mounted) Navigator.pop(context);
-
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('PDF descargado exitosamente'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _controller.errorMsg.isNotEmpty
-                  ? _controller.errorMsg
-                  : 'Error al descargar PDF',
-            ),
-            backgroundColor: AppColors.primary,
-          ),
-        );
-      }
+      await descargarCotizacionPdf(c);
     } catch (e) {
-      if (mounted) Navigator.pop(context);
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al descargar PDF: $e'),
+            content: Text('Error al generar PDF: $e'),
             backgroundColor: AppColors.primary,
           ),
         );
@@ -303,22 +265,25 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
           child: CircularProgressIndicator(),
         ),
       CotizacionStatus.error => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text(
-                controller.errorMsg,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: controller.cargar,
-                child: const Text('Reintentar'),
-              ),
-            ],
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  controller.errorMsg,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: controller.cargar,
+                  child: const Text('Reintentar'),
+                ),
+              ],
+            ),
           ),
         ),
       CotizacionStatus.listo => controller.cotizaciones.isEmpty
@@ -378,240 +343,253 @@ class _CotizacionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: Color(0xFFE2E8F0)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
+    return InkWell(
+      onTap: onDetalle,
+      borderRadius: BorderRadius.circular(18),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              '#${c.id}',
+                              style: const TextStyle(
+                                color: AppColors.textMuted,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'Cotización',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          c.clienteNombre,
+                          style: const TextStyle(color: AppColors.textMuted),
+                        ),
+                        if (c.homenajeado.isNotEmpty) ...[
+                          const SizedBox(height: 2),
                           Text(
-                            '#${c.id}',
+                            'Para: ${c.homenajeado}',
                             style: const TextStyle(
                               color: AppColors.textMuted,
-                              fontWeight: FontWeight.w800,
                               fontSize: 12,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
+                        ],
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _pillBg(),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      c.estadoLabel,
+                      style: TextStyle(
+                        color: _pillFg(),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  PopupMenuButton<String>(
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'detalle',
+                        child: Row(
+                          children: [
+                            Icon(Icons.visibility_outlined, size: 18),
+                            SizedBox(width: 8),
+                            Text('Ver Detalle'),
+                          ],
+                        ),
+                      ),
+                      if (onConvertir != null)
+                        const PopupMenuItem(
+                          value: 'convertir',
+                          child: Row(
+                            children: [
+                              Icon(Icons.bookmark_add_outlined, size: 18),
+                              SizedBox(width: 8),
+                              Text('Convertir a Reserva'),
+                            ],
+                          ),
+                        ),
+                      if (onAnular != null)
+                        const PopupMenuItem(
+                          value: 'anular',
+                          child: Row(
+                            children: [
+                              Icon(Icons.cancel_outlined, size: 18),
+                              SizedBox(width: 8),
+                              Text('Anular'),
+                            ],
+                          ),
+                        ),
+                      const PopupMenuItem(
+                        value: 'pdf',
+                        child: Row(
+                          children: [
+                            Icon(Icons.picture_as_pdf_outlined,
+                                size: 18, color: Color(0xFFB91C1C)),
+                            SizedBox(width: 8),
+                            Text('Descargar PDF',
+                                style: TextStyle(color: Color(0xFFB91C1C))),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'eliminar',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline,
+                                size: 18, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Eliminar',
+                                style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onSelected: (v) {
+                      switch (v) {
+                        case 'detalle':
+                          onDetalle();
+                        case 'convertir':
+                          onConvertir?.call();
+                        case 'anular':
+                          onAnular?.call();
+                        case 'pdf':
+                          onVerPDF();
+                        case 'eliminar':
+                          onEliminar();
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Información del evento — horaInicio/horaFin son String
+              Wrap(
+                spacing: 14,
+                runSpacing: 8,
+                children: [
+                  _info(
+                    Icons.calendar_month_outlined,
+                    '${c.fechaEvento.day}/${c.fechaEvento.month}/${c.fechaEvento.year}',
+                  ),
+                  _info(Icons.schedule, '${c.horaInicio} - ${c.horaFin}'),
+                  _info(Icons.place_outlined, c.ubicacion),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 10),
+
+              // ── Servicios (chips) ──────────────────────────────────────────
+              if (c.chips.isNotEmpty) ...[
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: c.chips
+                      .map((s) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.3)),
+                            ),
                             child: Text(
-                              c.tipoEventoLabel,
+                              s.cantidad > 1
+                                  ? '${s.nombre} x${s.cantidad}'
+                                  : s.nombre,
                               style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.text,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
                               ),
                             ),
+                          ))
+                      .toList(),
+                ),
+                const SizedBox(height: 10),
+              ],
+
+              const Divider(height: 1),
+              const SizedBox(height: 10),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Total Estimado',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w700,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        c.clienteNombre,
-                        style: const TextStyle(color: AppColors.textMuted),
-                      ),
-                      if (c.homenajeado.isNotEmpty) ...[
+                        ),
                         const SizedBox(height: 2),
                         Text(
-                          'Para: ${c.homenajeado}',
+                          c.totalEstimado != null
+                              ? formatCop(c.totalEstimado!.round())
+                              : 'No calculado',
                           style: const TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.text,
                           ),
                         ),
                       ],
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _pillBg(),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    c.estadoLabel,
-                    style: TextStyle(
-                      color: _pillFg(),
-                      fontWeight: FontWeight.w900,
-                      fontSize: 12,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                PopupMenuButton<String>(
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(
-                      value: 'detalle',
-                      child: Row(
-                        children: [
-                          Icon(Icons.visibility_outlined, size: 18),
-                          SizedBox(width: 8),
-                          Text('Ver Detalle'),
-                        ],
-                      ),
-                    ),
-                    if (onConvertir != null)
-                      const PopupMenuItem(
-                        value: 'convertir',
-                        child: Row(
-                          children: [
-                            Icon(Icons.bookmark_add_outlined, size: 18),
-                            SizedBox(width: 8),
-                            Text('Convertir a Reserva'),
-                          ],
-                        ),
-                      ),
-                    if (onAnular != null)
-                      const PopupMenuItem(
-                        value: 'anular',
-                        child: Row(
-                          children: [
-                            Icon(Icons.cancel_outlined, size: 18),
-                            SizedBox(width: 8),
-                            Text('Anular'),
-                          ],
-                        ),
-                      ),
-                    const PopupMenuItem(
-                      value: 'pdf',
-                      child: Row(
-                        children: [
-                          Icon(Icons.picture_as_pdf_outlined, size: 18),
-                          SizedBox(width: 8),
-                          Text('Ver PDF'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuDivider(),
-                    const PopupMenuItem(
-                      value: 'eliminar',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_outline,
-                              size: 18, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Eliminar', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
-                  onSelected: (v) {
-                    switch (v) {
-                      case 'detalle':
-                        onDetalle();
-                      case 'convertir':
-                        onConvertir?.call();
-                      case 'anular':
-                        onAnular?.call();
-                      case 'pdf':
-                        onVerPDF();
-                      case 'eliminar':
-                        onEliminar();
-                    }
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Información del evento — horaInicio/horaFin son String
-            Wrap(
-              spacing: 14,
-              runSpacing: 8,
-              children: [
-                _info(
-                  Icons.calendar_month_outlined,
-                  '${c.fechaEvento.day}/${c.fechaEvento.month}/${c.fechaEvento.year}',
-                ),
-                _info(Icons.schedule, '${c.horaInicio} - ${c.horaFin}'),
-                _info(Icons.place_outlined, c.ubicacion),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-
-            // ── Servicios (chips) ──────────────────────────────────────────
-            if (c.servicios.isNotEmpty) ...[
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: c.servicios
-                    .map((s) => Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                                color:
-                                    AppColors.primary.withValues(alpha: 0.3)),
-                          ),
-                          child: Text(
-                            s.cantidad > 1
-                                ? '${s.servicio.nombre} x${s.cantidad}'
-                                : s.servicio.nombre,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ))
-                    .toList(),
+                ],
               ),
-              const SizedBox(height: 10),
             ],
-
-            const Divider(height: 1),
-            const SizedBox(height: 10),
-
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Total Estimado',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        c.totalEstimado != null
-                            ? formatCop(c.totalEstimado!.round())
-                            : 'No calculado',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.text,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );
