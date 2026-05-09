@@ -233,6 +233,8 @@ class _EnsayoDetalleScreenState extends State<EnsayoDetalleScreen> {
               _Fila(label: 'Lugar', valor: e.lugar),
               if (e.ubicacion != null && e.ubicacion!.isNotEmpty)
                 _Fila(label: 'Ubicación', valor: e.ubicacion!),
+              if (e.notas != null && e.notas!.isNotEmpty)
+                _Fila(label: 'Notas', valor: e.notas!),
               if (e.createdAt != null)
                 _Fila(
                   label: 'Creado el',

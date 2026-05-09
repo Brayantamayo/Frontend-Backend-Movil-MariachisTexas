@@ -126,6 +126,7 @@ class EnsayoController extends ChangeNotifier {
         fechaHora: _todos[idx].fechaHora,
         lugar: _todos[idx].lugar,
         ubicacion: _todos[idx].ubicacion,
+        notas: _todos[idx].notas,
         estado: nuevoEstado,
         repertorios: _todos[idx].repertorios,
       );
@@ -139,6 +140,7 @@ class EnsayoController extends ChangeNotifier {
         fechaHora: _todosOriginales[idxOrig].fechaHora,
         lugar: _todosOriginales[idxOrig].lugar,
         ubicacion: _todosOriginales[idxOrig].ubicacion,
+        notas: _todosOriginales[idxOrig].notas,
         estado: nuevoEstado,
         repertorios: _todosOriginales[idxOrig].repertorios,
       );

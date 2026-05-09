@@ -505,165 +505,171 @@ class _EnsayoCard extends StatelessWidget {
     final listo = e.estado == EstadoEnsayo.listo;
     final horaFormato = DateFormat('HH:mm').format(e.fechaHora);
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Color(0xFFE2E8F0)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        e.nombre,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: listo ? AppColors.textMuted : AppColors.text,
-                          decoration: listo
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
+    return InkWell(
+      onTap: onDetalle,
+      borderRadius: BorderRadius.circular(12),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          e.nombre,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: listo ? AppColors.textMuted : AppColors.text,
+                            decoration: listo
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.schedule,
-                            size: 14,
-                            color: AppColors.textMuted,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            horaFormato,
-                            style: const TextStyle(
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.schedule,
+                              size: 14,
                               color: AppColors.textMuted,
-                              fontWeight: FontWeight.w600,
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Icon(
-                            Icons.place,
-                            size: 14,
-                            color: AppColors.textMuted,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              e.lugar,
+                            const SizedBox(width: 4),
+                            Text(
+                              horaFormato,
                               style: const TextStyle(
                                 color: AppColors.textMuted,
                                 fontWeight: FontWeight.w600,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 12),
+                            const Icon(
+                              Icons.place,
+                              size: 14,
+                              color: AppColors.textMuted,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                e.lugar,
+                                style: const TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _pillBg(),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      e.estadoLabel.toUpperCase(),
+                      style: TextStyle(
+                        color: _pillFg(),
+                        fontWeight: FontWeight.w900,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  PopupMenuButton<String>(
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: 'detalle',
+                        child: Row(
+                          children: [
+                            Icon(Icons.visibility_outlined, size: 18),
+                            SizedBox(width: 8),
+                            Text('Ver Detalle'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'toggle',
+                        child: Row(
+                          children: [
+                            Icon(
+                              listo
+                                  ? Icons.pending_outlined
+                                  : Icons.check_circle_outline,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(listo
+                                ? 'Marcar como Pendiente'
+                                : 'Marcar como Listo'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'eliminar',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete_outline,
+                                size: 18, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Eliminar',
+                                style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
                       ),
                     ],
+                    onSelected: (v) {
+                      switch (v) {
+                        case 'detalle':
+                          onDetalle();
+                        case 'toggle':
+                          onToggle();
+                        case 'eliminar':
+                          onEliminar();
+                      }
+                    },
                   ),
-                ),
+                ],
+              ),
+              if (e.repertorios.isNotEmpty) ...[
+                const SizedBox(height: 8),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _pillBg(),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    e.estadoLabel.toUpperCase(),
-                    style: TextStyle(
-                      color: _pillFg(),
-                      fontWeight: FontWeight.w900,
-                      fontSize: 10,
+                    '${e.repertorios.length} canción${e.repertorios.length != 1 ? 'es' : ''}',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                PopupMenuButton<String>(
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(
-                      value: 'detalle',
-                      child: Row(
-                        children: [
-                          Icon(Icons.visibility_outlined, size: 18),
-                          SizedBox(width: 8),
-                          Text('Ver Detalle'),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'toggle',
-                      child: Row(
-                        children: [
-                          Icon(
-                            listo
-                                ? Icons.pending_outlined
-                                : Icons.check_circle_outline,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(listo
-                              ? 'Marcar como Pendiente'
-                              : 'Marcar como Listo'),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuDivider(),
-                    const PopupMenuItem(
-                      value: 'eliminar',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_outline,
-                              size: 18, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Eliminar', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
-                  onSelected: (v) {
-                    switch (v) {
-                      case 'detalle':
-                        onDetalle();
-                      case 'toggle':
-                        onToggle();
-                      case 'eliminar':
-                        onEliminar();
-                    }
-                  },
                 ),
               ],
-            ),
-            if (e.repertorios.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${e.repertorios.length} canción${e.repertorios.length != 1 ? 'es' : ''}',
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );

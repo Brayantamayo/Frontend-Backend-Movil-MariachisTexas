@@ -25,7 +25,19 @@ class VentaController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      ventas = await _service.obtenerVentas();
+      // Cargar ventas del endpoint + reservas anuladas con abonos
+      final results = await Future.wait([
+        _service.obtenerVentas(),
+        _service.obtenerReservasAnuladasConAbonos(),
+      ]);
+      final ventasNormales = results[0];
+      final ventasDeAnuladas = results[1];
+
+      // Combinar evitando duplicados por id
+      final ids = ventasNormales.map((v) => v.id).toSet();
+      final extras =
+          ventasDeAnuladas.where((v) => !ids.contains(v.id)).toList();
+      ventas = [...ventasNormales, ...extras];
       _ventasFiltradas = [];
       status = VentaStatus.listo;
     } catch (e) {
@@ -60,6 +72,36 @@ class VentaController extends ChangeNotifier {
     }
     _ventasFiltradas = lista;
     notifyListeners();
+  }
+
+  Future<bool> registrarAbono(
+    int reservaId, {
+    required double monto,
+    required String metodoPago,
+    String? notas,
+  }) async {
+    try {
+      await _service.registrarAbono(reservaId,
+          monto: monto, metodoPago: metodoPago, notas: notas);
+      await cargar();
+      return true;
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> anularVenta(int reservaId) async {
+    try {
+      await _service.anularReserva(reservaId);
+      await cargar();
+      return true;
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<Venta?> getDetalle(int id) async {

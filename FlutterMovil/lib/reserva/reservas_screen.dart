@@ -9,6 +9,7 @@ import 'reserva_controller.dart';
 import 'reserva_detalle_screen.dart';
 import 'nueva_reserva_screen.dart';
 import 'reserva_pdf.dart';
+import 'editar_reserva_screen.dart';
 
 class ReservasScreen extends StatefulWidget {
   const ReservasScreen({super.key});
@@ -210,6 +211,44 @@ class _ReservasScreenState extends State<ReservasScreen> {
     }
   }
 
+  Future<void> _editarReserva(Reserva r) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditarReservaScreen(reserva: r)),
+    );
+    if (result == true) _controller.cargar();
+  }
+
+  Future<void> _confirmEliminar(Reserva r) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Eliminar Reserva'),
+        content: Text(
+            '¿Estás seguro de eliminar la reserva #${r.id}?\n\nEsta acción no se puede deshacer.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final success = await _controller.eliminarReserva(r.id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            success ? 'Reserva eliminada exitosamente' : _controller.errorMsg),
+        backgroundColor: success ? Colors.red : AppColors.primary,
+      ));
+    }
+  }
+
   Future<void> _descargarPdf(Reserva r) async {
     try {
       await descargarReservaPdf(r);
@@ -316,24 +355,6 @@ class _ReservasScreenState extends State<ReservasScreen> {
                           controller.filtrarPorEstado(EstadoReserva.pendiente),
                     ),
                     FilterChipData(
-                      label: 'Confirmada',
-                      bgColor: const Color(0xFFDCFCE7),
-                      fgColor: const Color(0xFF047857),
-                      selected:
-                          controller.estadoFiltro == EstadoReserva.confirmada,
-                      onTap: () =>
-                          controller.filtrarPorEstado(EstadoReserva.confirmada),
-                    ),
-                    FilterChipData(
-                      label: 'Finalizado',
-                      bgColor: const Color(0xFFDBEAFE),
-                      fgColor: const Color(0xFF1D4ED8),
-                      selected:
-                          controller.estadoFiltro == EstadoReserva.finalizado,
-                      onTap: () =>
-                          controller.filtrarPorEstado(EstadoReserva.finalizado),
-                    ),
-                    FilterChipData(
                       label: 'Anulada',
                       bgColor: const Color(0xFFFEE2E2),
                       fgColor: const Color(0xFFB91C1C),
@@ -375,22 +396,41 @@ class _ReservasScreenState extends State<ReservasScreen> {
       ReservaStatus.listo => controller.reservas.isEmpty
           ? const Center(child: Text('No se encontraron reservas.'))
           : ListView.separated(
-              itemCount: controller.reservas.length,
+              itemCount: controller.reservas
+                  .where((r) =>
+                      (r.estadoEnum == EstadoReserva.pendiente) ||
+                      (r.estadoEnum == EstadoReserva.anulada &&
+                          r.abonos.isEmpty))
+                  .length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, i) => _ReservaCard(
-                r: controller.reservas[i],
-                onDetalle: () => _showDetalle(controller.reservas[i]),
-                onAnular:
-                    controller.reservas[i].estadoEnum != EstadoReserva.anulada
-                        ? () => _confirmAnular(controller.reservas[i])
-                        : null,
-                onAbono: controller.reservas[i].estadoEnum !=
-                            EstadoReserva.anulada &&
-                        controller.reservas[i].saldoPendiente > 0
-                    ? () => _showAbono(controller.reservas[i])
-                    : null,
-                onPdf: () => _descargarPdf(controller.reservas[i]),
-              ),
+              itemBuilder: (context, i) {
+                final lista = controller.reservas
+                    .where((r) =>
+                        (r.estadoEnum == EstadoReserva.pendiente) ||
+                        (r.estadoEnum == EstadoReserva.anulada &&
+                            r.abonos.isEmpty))
+                    .toList();
+                final r = lista[i];
+                return _ReservaCard(
+                  r: r,
+                  onDetalle: () => _showDetalle(r),
+                  onEditar: r.estadoEnum == EstadoReserva.pendiente
+                      ? () => _editarReserva(r)
+                      : null,
+                  onAbono: r.estadoEnum == EstadoReserva.pendiente &&
+                          r.saldoPendiente > 0
+                      ? () => _showAbono(r)
+                      : null,
+                  onAnular: r.estadoEnum == EstadoReserva.pendiente
+                      ? () => _confirmAnular(r)
+                      : null,
+                  onEliminar:
+                      r.estadoEnum == EstadoReserva.anulada && r.abonos.isEmpty
+                          ? () => _confirmEliminar(r)
+                          : null,
+                  onPdf: () => _descargarPdf(r),
+                );
+              },
             ),
     };
   }
@@ -401,15 +441,19 @@ class _ReservasScreenState extends State<ReservasScreen> {
 class _ReservaCard extends StatelessWidget {
   final Reserva r;
   final VoidCallback onDetalle;
+  final VoidCallback? onEditar;
   final VoidCallback? onAnular;
   final VoidCallback? onAbono;
+  final VoidCallback? onEliminar;
   final VoidCallback onPdf;
 
   const _ReservaCard({
     required this.r,
     required this.onDetalle,
+    required this.onEditar,
     required this.onAnular,
     required this.onAbono,
+    required this.onEliminar,
     required this.onPdf,
   });
 
@@ -503,54 +547,77 @@ class _ReservaCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   PopupMenuButton<String>(
-                    itemBuilder: (_) => [
-                      const PopupMenuItem(
+                    itemBuilder: (_) {
+                      final items = <PopupMenuEntry<String>>[];
+
+                      // Ver detalle — siempre
+                      items.add(const PopupMenuItem(
                           value: 'detalle',
                           child: Row(children: [
                             Icon(Icons.visibility_outlined, size: 18),
                             SizedBox(width: 8),
                             Text('Ver Detalle'),
-                          ])),
-                      if (onAbono != null)
-                        const PopupMenuItem(
-                            value: 'abono',
+                          ])));
+
+                      if (r.estadoEnum == EstadoReserva.pendiente) {
+                        // Editar
+                        items.add(const PopupMenuItem(
+                            value: 'editar',
                             child: Row(children: [
-                              Icon(Icons.payments_outlined, size: 18),
+                              Icon(Icons.edit_outlined, size: 18),
                               SizedBox(width: 8),
-                              Text('Registrar Abono'),
-                            ])),
-                      const PopupMenuItem(
-                          value: 'pdf',
-                          child: Row(children: [
-                            Icon(Icons.picture_as_pdf_outlined,
-                                size: 18, color: Color(0xFFB91C1C)),
-                            SizedBox(width: 8),
-                            Text('Descargar PDF',
-                                style: TextStyle(color: Color(0xFFB91C1C))),
-                          ])),
-                      if (onAnular != null) ...[
-                        const PopupMenuDivider(),
-                        const PopupMenuItem(
+                              Text('Editar'),
+                            ])));
+                        // Abono
+                        if (onAbono != null)
+                          items.add(const PopupMenuItem(
+                              value: 'abono',
+                              child: Row(children: [
+                                Icon(Icons.payments_outlined, size: 18),
+                                SizedBox(width: 8),
+                                Text('Registrar Abono'),
+                              ])));
+                        // Anular
+                        items.add(const PopupMenuDivider());
+                        items.add(const PopupMenuItem(
                             value: 'anular',
                             child: Row(children: [
                               Icon(Icons.cancel_outlined,
-                                  size: 18, color: Colors.red),
+                                  size: 18, color: Colors.orange),
                               SizedBox(width: 8),
                               Text('Anular',
+                                  style: TextStyle(color: Colors.orange)),
+                            ])));
+                      }
+
+                      if (r.estadoEnum == EstadoReserva.anulada &&
+                          onEliminar != null) {
+                        items.add(const PopupMenuDivider());
+                        items.add(const PopupMenuItem(
+                            value: 'eliminar',
+                            child: Row(children: [
+                              Icon(Icons.delete_outline,
+                                  size: 18, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Eliminar',
                                   style: TextStyle(color: Colors.red)),
-                            ])),
-                      ],
-                    ],
+                            ])));
+                      }
+
+                      return items;
+                    },
                     onSelected: (v) async {
                       switch (v) {
                         case 'detalle':
                           onDetalle();
+                        case 'editar':
+                          onEditar?.call();
                         case 'abono':
                           onAbono?.call();
-                        case 'pdf':
-                          onPdf();
                         case 'anular':
                           onAnular?.call();
+                        case 'eliminar':
+                          onEliminar?.call();
                       }
                     },
                   ),

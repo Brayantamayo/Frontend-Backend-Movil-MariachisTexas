@@ -8,6 +8,7 @@ import '../ui/screen_header.dart';
 import 'cotizacion_controller.dart';
 import 'cotizacion_detalle_screen.dart';
 import 'cotizacion_pdf.dart';
+import 'editar_cotizacion_screen.dart';
 
 class CotizacionesScreen extends StatefulWidget {
   const CotizacionesScreen({super.key});
@@ -178,6 +179,14 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
     }
   }
 
+  Future<void> _editarCotizacion(Cotizacion c) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditarCotizacionScreen(cotizacion: c)),
+    );
+    if (result == true) _controller.cargar();
+  }
+
   Future<void> _verPDF(Cotizacion c) async {
     try {
       await descargarCotizacionPdf(c);
@@ -300,8 +309,15 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
                 onAnular: controller.cotizaciones[i].puedeAnularse
                     ? () => _confirmAnular(controller.cotizaciones[i])
                     : null,
-                onEliminar: () => _confirmEliminar(controller.cotizaciones[i]),
+                onEliminar: controller.cotizaciones[i].estado ==
+                        EstadoCotizacion.anulada
+                    ? () => _confirmEliminar(controller.cotizaciones[i])
+                    : null,
                 onVerPDF: () => _verPDF(controller.cotizaciones[i]),
+                onEditar: controller.cotizaciones[i].estado ==
+                        EstadoCotizacion.enEspera
+                    ? () => _editarCotizacion(controller.cotizaciones[i])
+                    : null,
               ),
             ),
     };
@@ -313,8 +329,9 @@ class _CotizacionCard extends StatelessWidget {
   final VoidCallback onDetalle;
   final VoidCallback? onConvertir;
   final VoidCallback? onAnular;
-  final VoidCallback onEliminar;
+  final VoidCallback? onEliminar;
   final VoidCallback onVerPDF;
+  final VoidCallback? onEditar;
 
   const _CotizacionCard({
     required this.c,
@@ -323,6 +340,7 @@ class _CotizacionCard extends StatelessWidget {
     required this.onAnular,
     required this.onEliminar,
     required this.onVerPDF,
+    required this.onEditar,
   });
 
   Color _pillBg() {
@@ -428,77 +446,97 @@ class _CotizacionCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   PopupMenuButton<String>(
-                    itemBuilder: (_) => [
-                      const PopupMenuItem(
+                    itemBuilder: (_) {
+                      final items = <PopupMenuEntry<String>>[];
+
+                      // Ver detalle — siempre
+                      items.add(const PopupMenuItem(
                         value: 'detalle',
-                        child: Row(
-                          children: [
-                            Icon(Icons.visibility_outlined, size: 18),
-                            SizedBox(width: 8),
-                            Text('Ver Detalle'),
-                          ],
-                        ),
-                      ),
-                      if (onConvertir != null)
-                        const PopupMenuItem(
-                          value: 'convertir',
-                          child: Row(
-                            children: [
-                              Icon(Icons.bookmark_add_outlined, size: 18),
-                              SizedBox(width: 8),
-                              Text('Convertir a Reserva'),
-                            ],
-                          ),
-                        ),
-                      if (onAnular != null)
-                        const PopupMenuItem(
-                          value: 'anular',
-                          child: Row(
-                            children: [
-                              Icon(Icons.cancel_outlined, size: 18),
-                              SizedBox(width: 8),
-                              Text('Anular'),
-                            ],
-                          ),
-                        ),
-                      const PopupMenuItem(
+                        child: Row(children: [
+                          Icon(Icons.visibility_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text('Ver Detalle'),
+                        ]),
+                      ));
+
+                      // Descargar PDF — siempre
+                      items.add(const PopupMenuItem(
                         value: 'pdf',
-                        child: Row(
-                          children: [
-                            Icon(Icons.picture_as_pdf_outlined,
-                                size: 18, color: Color(0xFFB91C1C)),
+                        child: Row(children: [
+                          Icon(Icons.picture_as_pdf_outlined,
+                              size: 18, color: Color(0xFFB91C1C)),
+                          SizedBox(width: 8),
+                          Text('Descargar PDF',
+                              style: TextStyle(color: Color(0xFFB91C1C))),
+                        ]),
+                      ));
+
+                      if (c.estado == EstadoCotizacion.enEspera) {
+                        // Editar
+                        items.add(const PopupMenuItem(
+                          value: 'editar',
+                          child: Row(children: [
+                            Icon(Icons.edit_outlined, size: 18),
                             SizedBox(width: 8),
-                            Text('Descargar PDF',
-                                style: TextStyle(color: Color(0xFFB91C1C))),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuDivider(),
-                      const PopupMenuItem(
-                        value: 'eliminar',
-                        child: Row(
-                          children: [
+                            Text('Editar'),
+                          ]),
+                        ));
+                        // Confirmar (convertir a reserva)
+                        if (onConvertir != null)
+                          items.add(const PopupMenuItem(
+                            value: 'convertir',
+                            child: Row(children: [
+                              Icon(Icons.check_circle_outline,
+                                  size: 18, color: Color(0xFF047857)),
+                              SizedBox(width: 8),
+                              Text('Confirmar',
+                                  style: TextStyle(color: Color(0xFF047857))),
+                            ]),
+                          ));
+                        // Anular
+                        items.add(const PopupMenuItem(
+                          value: 'anular',
+                          child: Row(children: [
+                            Icon(Icons.cancel_outlined,
+                                size: 18, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Text('Anular',
+                                style: TextStyle(color: Colors.orange)),
+                          ]),
+                        ));
+                      }
+
+                      if (c.estado == EstadoCotizacion.anulada &&
+                          onEliminar != null) {
+                        items.add(const PopupMenuDivider());
+                        items.add(const PopupMenuItem(
+                          value: 'eliminar',
+                          child: Row(children: [
                             Icon(Icons.delete_outline,
                                 size: 18, color: Colors.red),
                             SizedBox(width: 8),
                             Text('Eliminar',
                                 style: TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                    ],
+                          ]),
+                        ));
+                      }
+
+                      return items;
+                    },
                     onSelected: (v) {
                       switch (v) {
                         case 'detalle':
                           onDetalle();
+                        case 'pdf':
+                          onVerPDF();
+                        case 'editar':
+                          onEditar?.call();
                         case 'convertir':
                           onConvertir?.call();
                         case 'anular':
                           onAnular?.call();
-                        case 'pdf':
-                          onVerPDF();
                         case 'eliminar':
-                          onEliminar();
+                          onEliminar?.call();
                       }
                     },
                   ),

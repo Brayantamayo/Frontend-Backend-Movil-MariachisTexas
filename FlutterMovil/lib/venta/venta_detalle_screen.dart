@@ -50,10 +50,10 @@ class VentaDetalleScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // ── Reserva / Evento ───────────────────────────────────────────
+            // ── Venta / Evento ─────────────────────────────────────────────
             if (_tieneInfoEvento(v)) ...[
               _Seccion(
-                titulo: 'Reserva',
+                titulo: 'Venta',
                 icono: Icons.event_outlined,
                 children: [
                   if (v.concepto != null && v.concepto!.isNotEmpty)
@@ -188,20 +188,20 @@ class _EstadoBanner extends StatelessWidget {
   const _EstadoBanner({required this.venta});
 
   Color get _bg => switch (venta.estadoEnum) {
-        EstadoVenta.pendiente => const Color(0xFFFEF3C7),
-        EstadoVenta.completada => const Color(0xFFDCFCE7),
+        EstadoVenta.confirmado => const Color(0xFFDCFCE7),
+        EstadoVenta.finalizado => const Color(0xFFDBEAFE),
         EstadoVenta.cancelada => const Color(0xFFFEE2E2),
       };
 
   Color get _fg => switch (venta.estadoEnum) {
-        EstadoVenta.pendiente => const Color(0xFFB45309),
-        EstadoVenta.completada => const Color(0xFF047857),
+        EstadoVenta.confirmado => const Color(0xFF047857),
+        EstadoVenta.finalizado => const Color(0xFF1D4ED8),
         EstadoVenta.cancelada => const Color(0xFFB91C1C),
       };
 
   IconData get _icon => switch (venta.estadoEnum) {
-        EstadoVenta.pendiente => Icons.hourglass_empty_rounded,
-        EstadoVenta.completada => Icons.check_circle_outline,
+        EstadoVenta.confirmado => Icons.check_circle_outline,
+        EstadoVenta.finalizado => Icons.verified_outlined,
         EstadoVenta.cancelada => Icons.cancel_outlined,
       };
 

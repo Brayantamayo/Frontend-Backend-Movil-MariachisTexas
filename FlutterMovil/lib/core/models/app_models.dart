@@ -6,7 +6,7 @@ enum EstadoReserva { pendiente, confirmada, anulada, finalizado }
 
 enum EstadoEnsayo { pendiente, listo }
 
-enum EstadoVenta { pendiente, completada, cancelada }
+enum EstadoVenta { confirmado, finalizado, cancelada }
 
 enum TipoEvento {
   boda,
@@ -40,6 +40,21 @@ DateTime? _parseDateTime(dynamic v) {
   } catch (_) {
     return null;
   }
+}
+
+/// Combina una fecha (2026-05-22) con una hora separada (17:00)
+DateTime? _parseDateTimeWithTime(dynamic dateVal, dynamic timeVal) {
+  final date = _parseDateTime(dateVal);
+  if (date == null) return null;
+  if (timeVal == null) return date;
+  try {
+    final parts = timeVal.toString().split(':');
+    if (parts.length >= 2) {
+      return DateTime(date.year, date.month, date.day, int.parse(parts[0]),
+          int.parse(parts[1]));
+    }
+  } catch (_) {}
+  return date;
 }
 
 // ─── USUARIO ──────────────────────────────────────────────────────────────────
@@ -594,8 +609,37 @@ class Venta {
             [],
       );
 
-  EstadoVenta get estadoEnum => _estadoVentaFromString(estado);
-  String get estadoLabel => _estadoVentaToLabel(estadoEnum);
+  EstadoVenta get estadoEnum {
+    // Finalizado: la fecha y hora del evento ya pasaron
+    if (fechaEvento != null && horaFin != null) {
+      try {
+        final parts = horaFin!.split(':');
+        final finDt = DateTime(
+          fechaEvento!.year,
+          fechaEvento!.month,
+          fechaEvento!.day,
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+        );
+        if (DateTime.now().isAfter(finDt)) return EstadoVenta.finalizado;
+      } catch (_) {}
+    }
+    // Confirmado: tiene abonos
+    if (abonos.isNotEmpty) return EstadoVenta.confirmado;
+    // Cancelada
+    if (estado.toUpperCase() == 'CANCELADA' ||
+        estado.toUpperCase() == 'CANCELADO') {
+      return EstadoVenta.cancelada;
+    }
+    // Por defecto confirmado (viene de reserva confirmada)
+    return EstadoVenta.confirmado;
+  }
+
+  String get estadoLabel => switch (estadoEnum) {
+        EstadoVenta.confirmado => 'Confirmado',
+        EstadoVenta.finalizado => 'Finalizado',
+        EstadoVenta.cancelada => 'Anulada',
+      };
 }
 
 List<Map<String, dynamic>> _toRawList(dynamic raw) {
@@ -790,6 +834,7 @@ class Ensayo {
   final DateTime fechaHora;
   final String lugar;
   final String? ubicacion;
+  final String? notas;
   final EstadoEnsayo estado;
   final List<Repertorio> repertorios;
   final DateTime? createdAt;
@@ -801,6 +846,7 @@ class Ensayo {
     required this.fechaHora,
     required this.lugar,
     this.ubicacion,
+    this.notas,
     required this.estado,
     this.repertorios = const [],
     this.createdAt,
@@ -814,12 +860,14 @@ class Ensayo {
             j['name'] ??
             j['titulo'] ??
             'Sin nombre') as String,
-        fechaHora: _parseDateTime(j['dateTime'] ??
-                j['date_time'] ??
-                j['fechaHora'] ??
-                j['fecha_hora'] ??
-                j['fecha'] ??
-                j['date']) ??
+        fechaHora: _parseDateTimeWithTime(
+                j['date'] ??
+                    j['dateTime'] ??
+                    j['date_time'] ??
+                    j['fechaHora'] ??
+                    j['fecha_hora'] ??
+                    j['fecha'],
+                j['time'] ?? j['hora']) ??
             DateTime.now(),
         lugar: (j['location'] ??
             j['lugar'] ??
@@ -828,6 +876,7 @@ class Ensayo {
             'Sin lugar') as String,
         ubicacion:
             (j['address'] ?? j['ubicacion'] ?? j['direccion']) as String?,
+        notas: (j['notes'] ?? j['notas']) as String?,
         estado: _estadoEnsayoFromString((j['status'] ??
             j['estado'] ??
             j['state'] ??
@@ -867,18 +916,6 @@ EstadoReserva _estadoReservaFromString(String s) => switch (s) {
       'ANULADA' => EstadoReserva.anulada,
       'FINALIZADO' => EstadoReserva.finalizado,
       _ => EstadoReserva.pendiente,
-    };
-
-EstadoVenta _estadoVentaFromString(String s) => switch (s.toUpperCase()) {
-      'COMPLETADA' || 'FINALIZADO' || 'FINALIZADA' => EstadoVenta.completada,
-      'CANCELADA' || 'CANCELADO' => EstadoVenta.cancelada,
-      _ => EstadoVenta.pendiente,
-    };
-
-String _estadoVentaToLabel(EstadoVenta e) => switch (e) {
-      EstadoVenta.pendiente => 'Pendiente',
-      EstadoVenta.completada => 'Completada',
-      EstadoVenta.cancelada => 'Cancelada',
     };
 
 EstadoEnsayo _estadoEnsayoFromString(String s) => switch (s) {

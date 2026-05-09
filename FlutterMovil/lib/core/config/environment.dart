@@ -1,7 +1,5 @@
 library;
 
-import 'package:flutter/foundation.dart';
-
 class Environment {
   final String name;
   final String apiUrl;
@@ -13,10 +11,9 @@ class Environment {
     required this.apiVersion,
   });
 
-
   static const prod = Environment(
-    name: 'production',
-    apiUrl: 'https://mariachistexas-production.up.railway.app',
+    name: 'mariachistexasmedellin-fron-back',
+    apiUrl: 'https://mariachistexasmedellin-fron-back-ifoi.onrender.com',
     apiVersion: 'api',
   );
   static Environment get current => prod;

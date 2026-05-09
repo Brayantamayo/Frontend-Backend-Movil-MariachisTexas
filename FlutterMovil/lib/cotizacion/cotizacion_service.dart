@@ -255,6 +255,58 @@ class CotizacionService {
     }
   }
 
+  // ── Actualizar cotización ──────────────────────────────────────────────────
+
+  Future<void> actualizarCotizacion(
+    int id, {
+    required String clienteNombre,
+    required String clienteEmail,
+    required String clienteTelefono,
+    required String homenajeado,
+    required String tipoEvento,
+    required DateTime fechaEvento,
+    required String horaInicio,
+    required String horaFin,
+    required String ubicacion,
+    required String notas,
+    required List<Map<String, dynamic>> servicios,
+    required double totalAmount,
+  }) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('No autenticado');
+
+    final uri = Uri.parse(Env.endpoint('cotizaciones/$id'));
+    final fechaStr =
+        '${fechaEvento.year}-${fechaEvento.month.toString().padLeft(2, '0')}-${fechaEvento.day.toString().padLeft(2, '0')}';
+
+    final body = jsonEncode({
+      'clientName': clienteNombre,
+      'clientEmail': clienteEmail,
+      'clientPhone': clienteTelefono,
+      'homenajeado': homenajeado,
+      'eventType': tipoEvento,
+      'eventDate': fechaStr,
+      'startTime': horaInicio,
+      'endTime': horaFin,
+      'location': ubicacion,
+      'notes': notas,
+      'selectedServices': servicios,
+      'totalAmount': totalAmount,
+    });
+
+    final response = await http
+        .put(uri, headers: NetworkConfig.authHeaders(token), body: body)
+        .timeout(NetworkConfig.timeout);
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      String msg = 'Error al actualizar cotización';
+      try {
+        msg = (jsonDecode(response.body) as Map)['message'] ?? msg;
+      } catch (_) {}
+      throw Exception(msg);
+    }
+  }
+
   // ── Crear cotización ───────────────────────────────────────────────────────
 
   Future<Cotizacion> crearCotizacion({

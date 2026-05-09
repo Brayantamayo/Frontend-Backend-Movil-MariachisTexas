@@ -63,6 +63,108 @@ class VentaService {
     throw Exception(_extractErrorMessage(response));
   }
 
+  Future<void> registrarAbono(
+    int reservaId, {
+    required double monto,
+    required String metodoPago,
+    String? notas,
+  }) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('No autenticado');
+
+    final uri = Uri.parse(Env.endpoint('reservas/$reservaId/abonos'));
+    final now = DateTime.now();
+    final date =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+    final body = jsonEncode({
+      'amount': monto,
+      'date': date,
+      'method': metodoPago,
+      if (notas != null && notas.isNotEmpty) 'notes': notas,
+    });
+
+    final response = await http
+        .post(uri, headers: _buildHeaders(token), body: body)
+        .timeout(NetworkConfig.timeout);
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw Exception(_extractErrorMessage(response));
+    }
+  }
+
+  /// Obtiene reservas ANULADAS que tienen abonos y las convierte a Venta
+  Future<List<Venta>> obtenerReservasAnuladasConAbonos() async {
+    final token = await _getToken();
+    if (token == null) throw Exception('No autenticado');
+
+    final uri = Uri.parse(Env.endpoint('reservas?incluirFinalizadas=true'));
+    final response = await http
+        .get(uri, headers: _buildHeaders(token))
+        .timeout(NetworkConfig.timeout);
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      List items;
+      try {
+        items = decoded as List;
+      } catch (_) {
+        return [];
+      }
+
+      return items
+          .map((e) {
+            try {
+              final m = <String, dynamic>{};
+              (e as Map).forEach((k, v) => m[k.toString()] = v);
+              final estado = (m['status'] ?? '').toString().toUpperCase();
+              if (estado != 'ANULADA') return null;
+              final pagos = m['payments'] as List? ?? [];
+              if (pagos.isEmpty) return null;
+              // Convertir reserva anulada con abonos a Venta
+              return Venta.fromJson({
+                'id': m['id'],
+                'clientName': m['clientName'],
+                'clientEmail': m['clientEmail'] ?? '',
+                'clientPhone': m['clientPhone'] ?? '',
+                'homenajeado': m['homenajeado'] ?? '',
+                'eventType': m['eventType'] ?? '',
+                'eventDate': m['eventDate'],
+                'eventTime': m['startTime'],
+                'eventEndTime': m['endTime'],
+                'eventLocation': m['location'] ?? '',
+                'totalAmount': m['totalAmount'] ?? 0,
+                'pendingAmount': m['pendingBalance'] ?? 0,
+                'paidAmount': m['paidAmount'] ?? 0,
+                'status': 'CONFIRMADA',
+                'date': m['createdAt'] ?? m['eventDate'],
+                'services': m['selectedServices'] ?? [],
+                'abonos': pagos,
+              });
+            } catch (_) {
+              return null;
+            }
+          })
+          .whereType<Venta>()
+          .toList();
+    }
+    return [];
+  }
+
+  Future<void> anularReserva(int id) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('No autenticado');
+
+    final uri = Uri.parse(Env.endpoint('reservas/$id/anular'));
+    final response = await http
+        .patch(uri, headers: _buildHeaders(token), body: jsonEncode({}))
+        .timeout(NetworkConfig.timeout);
+
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception(_extractErrorMessage(response));
+    }
+  }
+
   Future<List<Venta>> buscarVentas(String query) async {
     final ventas = await obtenerVentas();
     final q = query.toLowerCase().trim();

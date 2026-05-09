@@ -5,6 +5,7 @@ import '../core/format/currency.dart';
 import '../core/theme/app_colors.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
 import '../ui/screen_header.dart';
+import '../reserva/editar_reserva_screen.dart';
 import 'venta_controller.dart';
 import 'venta_detalle_screen.dart';
 
@@ -43,6 +44,236 @@ class _VentasScreenState extends State<VentasScreen> {
     );
   }
 
+  Future<void> _editarVenta(Venta v) async {
+    // Construir una Reserva temporal desde los datos de la venta para editar
+    final reserva = Reserva(
+      id: v.id,
+      cotizacionId: 0,
+      estado: 'CONFIRMADA',
+      totalValor: v.totalValor,
+      saldoPendiente: v.saldoPendiente,
+      clienteNombre: v.clienteNombre,
+      clienteEmail: v.clienteEmail,
+      clienteTelefono: v.clienteTelefono,
+      homenajeado: v.homenajeado ?? '',
+      tipoEvento: v.tipoEvento ?? '',
+      fechaEvento: v.fechaEvento ?? DateTime.now(),
+      horaInicio: v.horaInicio ?? '',
+      horaFin: v.horaFin ?? '',
+      ubicacion: v.ubicacion ?? '',
+      abonos: v.abonos,
+      chips: v.servicios
+          .map((s) => VentaServicio(
+              nombre: s.nombre, cantidad: s.cantidad, precio: s.precio))
+          .toList(),
+    );
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditarReservaScreen(reserva: reserva)),
+    );
+    if (result == true) _controller.cargar();
+  }
+
+  Future<void> _confirmAnular(Venta v) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Anular Venta'),
+        content: Text(
+            '¿Estás seguro de anular la venta #${v.id}?\n\nCliente: ${v.clienteNombre}'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.orange),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Anular'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final success = await _controller.anularVenta(v.id);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content:
+            Text(success ? 'Venta anulada exitosamente' : _controller.errorMsg),
+        backgroundColor: success ? Colors.orange : AppColors.primary,
+      ));
+    }
+  }
+
+  Future<void> _showAbono(Venta v) async {
+    final saldo = v.saldoPendiente;
+    final pagado = v.totalValor - saldo;
+    final esPrimerAbono = pagado == 0;
+    final anticipo50 = (v.totalValor / 2).ceilToDouble();
+    double? montoSeleccionado;
+    String metodo = 'EFECTIVO';
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          title: const Text('Registrar Abono'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _abonoRow('Total', formatCop(v.totalValor.round())),
+                      if (!esPrimerAbono)
+                        _abonoRow('Pagado', formatCop(pagado.round()),
+                            color: const Color(0xFF047857)),
+                      _abonoRow('Saldo pendiente', formatCop(saldo.round()),
+                          color: const Color(0xFFB91C1C), bold: true),
+                    ]),
+              ),
+              const SizedBox(height: 16),
+              if (esPrimerAbono) ...[
+                const Text('Selecciona el monto:',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: AppColors.textMuted)),
+                const SizedBox(height: 10),
+                Row(children: [
+                  Expanded(
+                      child: _montoBtn(
+                    label: '50%',
+                    sublabel: formatCop(anticipo50.round()),
+                    selected: montoSeleccionado == anticipo50,
+                    onTap: () => setS(() => montoSeleccionado = anticipo50),
+                  )),
+                  const SizedBox(width: 10),
+                  Expanded(
+                      child: _montoBtn(
+                    label: '100%',
+                    sublabel: formatCop(saldo.round()),
+                    selected: montoSeleccionado == saldo,
+                    onTap: () => setS(() => montoSeleccionado = saldo),
+                  )),
+                ]),
+              ] else ...[
+                _montoBtn(
+                  label: '100% restante',
+                  sublabel: formatCop(saldo.round()),
+                  selected: true,
+                  onTap: () {},
+                ),
+              ],
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: metodo,
+                decoration: const InputDecoration(
+                    labelText: 'Método de pago', border: OutlineInputBorder()),
+                items: const [
+                  DropdownMenuItem(value: 'EFECTIVO', child: Text('Efectivo')),
+                  DropdownMenuItem(
+                      value: 'TRANSFERENCIA', child: Text('Transferencia')),
+                  DropdownMenuItem(value: 'NEQUI', child: Text('Nequi')),
+                  DropdownMenuItem(
+                      value: 'DAVIPLATA', child: Text('Daviplata')),
+                  DropdownMenuItem(value: 'OTRO', child: Text('Otro')),
+                ],
+                onChanged: (val) => setS(() => metodo = val ?? 'EFECTIVO'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancelar')),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+              onPressed: (montoSeleccionado != null || !esPrimerAbono)
+                  ? () => Navigator.pop(ctx, true)
+                  : null,
+              child: const Text('Registrar'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (ok != true) return;
+    final monto = esPrimerAbono ? montoSeleccionado! : saldo;
+    final success = await _controller.registrarAbono(v.id,
+        monto: monto, metodoPago: metodo);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            success ? 'Abono registrado exitosamente' : _controller.errorMsg),
+        backgroundColor: success ? Colors.green : AppColors.primary,
+      ));
+    }
+  }
+
+  static Widget _abonoRow(String label, String value,
+      {Color? color, bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(label,
+            style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+        Text(value,
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+                color: color ?? AppColors.text)),
+      ]),
+    );
+  }
+
+  static Widget _montoBtn({
+    required String label,
+    required String sublabel,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? AppColors.primary : const Color(0xFFE2E8F0),
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(children: [
+          Text(label,
+              style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  color: selected ? AppColors.primary : AppColors.text)),
+          const SizedBox(height: 2),
+          Text(sublabel,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? AppColors.primary : AppColors.textMuted)),
+        ]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<VentaController>(
@@ -69,25 +300,25 @@ class _VentasScreenState extends State<VentasScreen> {
                       onTap: () => controller.filtrarPorEstado(null),
                     ),
                     FilterChipData(
-                      label: 'Pendiente',
-                      bgColor: const Color(0xFFFEF3C7),
-                      fgColor: const Color(0xFFB45309),
-                      selected:
-                          controller.estadoFiltro == EstadoVenta.pendiente,
-                      onTap: () =>
-                          controller.filtrarPorEstado(EstadoVenta.pendiente),
-                    ),
-                    FilterChipData(
-                      label: 'Completada',
+                      label: 'Confirmado',
                       bgColor: const Color(0xFFDCFCE7),
                       fgColor: const Color(0xFF047857),
                       selected:
-                          controller.estadoFiltro == EstadoVenta.completada,
+                          controller.estadoFiltro == EstadoVenta.confirmado,
                       onTap: () =>
-                          controller.filtrarPorEstado(EstadoVenta.completada),
+                          controller.filtrarPorEstado(EstadoVenta.confirmado),
                     ),
                     FilterChipData(
-                      label: 'Cancelada',
+                      label: 'Finalizado',
+                      bgColor: const Color(0xFFDBEAFE),
+                      fgColor: const Color(0xFF1D4ED8),
+                      selected:
+                          controller.estadoFiltro == EstadoVenta.finalizado,
+                      onTap: () =>
+                          controller.filtrarPorEstado(EstadoVenta.finalizado),
+                    ),
+                    FilterChipData(
+                      label: 'Anulada',
                       bgColor: const Color(0xFFFEE2E2),
                       fgColor: const Color(0xFFB91C1C),
                       selected:
@@ -128,10 +359,23 @@ class _VentasScreenState extends State<VentasScreen> {
           : ListView.separated(
               itemCount: controller.ventasMostradas.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, i) => _VentaCard(
-                venta: controller.ventasMostradas[i],
-                onDetalle: () => _showDetalle(controller.ventasMostradas[i]),
-              ),
+              itemBuilder: (context, i) {
+                final v = controller.ventasMostradas[i];
+                return _VentaCard(
+                  venta: v,
+                  onDetalle: () => _showDetalle(v),
+                  onAbono: v.estadoEnum == EstadoVenta.confirmado &&
+                          v.saldoPendiente > 0
+                      ? () => _showAbono(v)
+                      : null,
+                  onEditar: v.estadoEnum == EstadoVenta.confirmado
+                      ? () => _editarVenta(v)
+                      : null,
+                  onAnular: v.estadoEnum == EstadoVenta.confirmado
+                      ? () => _confirmAnular(v)
+                      : null,
+                );
+              },
             ),
     };
   }
@@ -142,18 +386,27 @@ class _VentasScreenState extends State<VentasScreen> {
 class _VentaCard extends StatelessWidget {
   final Venta venta;
   final VoidCallback onDetalle;
+  final VoidCallback? onAbono;
+  final VoidCallback? onEditar;
+  final VoidCallback? onAnular;
 
-  const _VentaCard({required this.venta, required this.onDetalle});
+  const _VentaCard({
+    required this.venta,
+    required this.onDetalle,
+    required this.onAbono,
+    required this.onEditar,
+    required this.onAnular,
+  });
 
   Color _pillBg() => switch (venta.estadoEnum) {
-        EstadoVenta.pendiente => const Color(0xFFFEF3C7),
-        EstadoVenta.completada => const Color(0xFFDCFCE7),
+        EstadoVenta.confirmado => const Color(0xFFDCFCE7),
+        EstadoVenta.finalizado => const Color(0xFFDBEAFE),
         EstadoVenta.cancelada => const Color(0xFFFEE2E2),
       };
 
   Color _pillFg() => switch (venta.estadoEnum) {
-        EstadoVenta.pendiente => const Color(0xFFB45309),
-        EstadoVenta.completada => const Color(0xFF047857),
+        EstadoVenta.confirmado => const Color(0xFF047857),
+        EstadoVenta.finalizado => const Color(0xFF1D4ED8),
         EstadoVenta.cancelada => const Color(0xFFB91C1C),
       };
 
@@ -236,18 +489,92 @@ class _VentaCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   PopupMenuButton<String>(
-                    itemBuilder: (_) => [
-                      const PopupMenuItem(
+                    itemBuilder: (_) {
+                      final items = <PopupMenuEntry<String>>[];
+                      // 1. Ver detalle — siempre
+                      items.add(const PopupMenuItem(
                         value: 'detalle',
                         child: Row(children: [
                           Icon(Icons.visibility_outlined, size: 18),
                           SizedBox(width: 8),
                           Text('Ver Detalle'),
                         ]),
-                      ),
-                    ],
+                      ));
+                      // Solo Confirmado
+                      if (venta.estadoEnum == EstadoVenta.confirmado) {
+                        // 2. Registrar abono
+                        if (onAbono != null)
+                          items.add(const PopupMenuItem(
+                            value: 'abono',
+                            child: Row(children: [
+                              Icon(Icons.payments_outlined, size: 18),
+                              SizedBox(width: 8),
+                              Text('Registrar Abono'),
+                            ]),
+                          ));
+                        // 3. Descargar PDF
+                        items.add(const PopupMenuItem(
+                          value: 'pdf',
+                          child: Row(children: [
+                            Icon(Icons.picture_as_pdf_outlined,
+                                size: 18, color: Color(0xFFB91C1C)),
+                            SizedBox(width: 8),
+                            Text('Descargar PDF',
+                                style: TextStyle(color: Color(0xFFB91C1C))),
+                          ]),
+                        ));
+                        // 4. Editar
+                        if (onEditar != null)
+                          items.add(const PopupMenuItem(
+                            value: 'editar',
+                            child: Row(children: [
+                              Icon(Icons.edit_outlined, size: 18),
+                              SizedBox(width: 8),
+                              Text('Editar'),
+                            ]),
+                          ));
+                        // 5. Anular
+                        if (onAnular != null) {
+                          items.add(const PopupMenuDivider());
+                          items.add(const PopupMenuItem(
+                            value: 'anular',
+                            child: Row(children: [
+                              Icon(Icons.cancel_outlined,
+                                  size: 18, color: Colors.orange),
+                              SizedBox(width: 8),
+                              Text('Anular',
+                                  style: TextStyle(color: Colors.orange)),
+                            ]),
+                          ));
+                        }
+                      } else {
+                        // Finalizado y Anulada: solo PDF
+                        items.add(const PopupMenuItem(
+                          value: 'pdf',
+                          child: Row(children: [
+                            Icon(Icons.picture_as_pdf_outlined,
+                                size: 18, color: Color(0xFFB91C1C)),
+                            SizedBox(width: 8),
+                            Text('Descargar PDF',
+                                style: TextStyle(color: Color(0xFFB91C1C))),
+                          ]),
+                        ));
+                      }
+                      return items;
+                    },
                     onSelected: (v) {
-                      if (v == 'detalle') onDetalle();
+                      switch (v) {
+                        case 'detalle':
+                          onDetalle();
+                        case 'abono':
+                          onAbono?.call();
+                        case 'editar':
+                          onEditar?.call();
+                        case 'anular':
+                          onAnular?.call();
+                        case 'pdf':
+                          break;
+                      }
                     },
                   ),
                 ],
@@ -259,8 +586,11 @@ class _VentaCard extends StatelessWidget {
                 spacing: 14,
                 runSpacing: 8,
                 children: [
-                  _info(Icons.calendar_month_outlined,
-                      '${venta.fechaVenta.day}/${venta.fechaVenta.month}/${venta.fechaVenta.year}'),
+                  _info(
+                      Icons.calendar_month_outlined,
+                      venta.fechaEvento != null
+                          ? '${venta.fechaEvento!.day}/${venta.fechaEvento!.month}/${venta.fechaEvento!.year}'
+                          : '${venta.fechaVenta.day}/${venta.fechaVenta.month}/${venta.fechaVenta.year}'),
                   if (venta.horaInicio != null && venta.horaFin != null)
                     _info(Icons.schedule,
                         '${venta.horaInicio} - ${venta.horaFin}'),
