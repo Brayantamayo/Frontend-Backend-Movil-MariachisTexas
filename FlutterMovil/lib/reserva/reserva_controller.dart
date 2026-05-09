@@ -146,13 +146,16 @@ class ReservaController extends ChangeNotifier {
     String? notas,
   }) async {
     try {
+      // Buscar el clientId de la reserva
+      final reserva = _todas.where((r) => r.id == reservaId).firstOrNull ??
+          _todasOriginales.where((r) => r.id == reservaId).firstOrNull;
       await _service.registrarAbono(
         reservaId,
         monto: monto,
         metodoPago: metodoPago,
         notas: notas,
+        clientId: reserva?.clientId,
       );
-      // Recargar la reserva actualizada
       await cargar();
       return true;
     } catch (e) {
@@ -345,6 +348,7 @@ class ReservaController extends ChangeNotifier {
         list[idx] = Reserva(
           id: r.id,
           cotizacionId: r.cotizacionId,
+          clientId: r.clientId,
           estado: nuevoEstado,
           totalValor: r.totalValor,
           saldoPendiente: r.saldoPendiente,

@@ -69,23 +69,29 @@ class _ClientesScreenState extends State<ClientesScreen> {
                       : items.isEmpty
                           ? const Center(
                               child: Text('No se encontraron clientes.'))
-                          : ListView.separated(
-                              itemCount: items.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 12),
-                              itemBuilder: (_, i) {
-                                final c = items[i];
-                                return _ClienteCard(
-                                  c: c,
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          ClienteDetalleScreen(cliente: c),
+                          : RefreshIndicator(
+                              color: AppColors.primary,
+                              onRefresh: () async => context
+                                  .read<ClientesController>()
+                                  .cargarClientes(),
+                              child: ListView.separated(
+                                itemCount: items.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 12),
+                                itemBuilder: (_, i) {
+                                  final c = items[i];
+                                  return _ClienteCard(
+                                    c: c,
+                                    onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            ClienteDetalleScreen(cliente: c),
+                                      ),
                                     ),
-                                  ),
-                                );
-                              },
+                                  );
+                                },
+                              ),
                             ),
             ),
           ],

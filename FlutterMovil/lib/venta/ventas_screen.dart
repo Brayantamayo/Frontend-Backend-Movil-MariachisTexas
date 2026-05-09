@@ -8,6 +8,7 @@ import '../ui/screen_header.dart';
 import '../reserva/editar_reserva_screen.dart';
 import 'venta_controller.dart';
 import 'venta_detalle_screen.dart';
+import 'venta_pdf.dart';
 
 class VentasScreen extends StatefulWidget {
   const VentasScreen({super.key});
@@ -36,6 +37,19 @@ class _VentasScreenState extends State<VentasScreen> {
   }
 
   void _onSearch(String query) => _controller.buscar(query);
+
+  Future<void> _descargarPdf(Venta v) async {
+    try {
+      await descargarVentaPdf(v);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error al generar PDF: $e'),
+          backgroundColor: AppColors.primary,
+        ));
+      }
+    }
+  }
 
   Future<void> _showDetalle(Venta v) async {
     await Navigator.push(
@@ -356,26 +370,32 @@ class _VentasScreenState extends State<VentasScreen> {
         ),
       VentaStatus.listo => controller.ventasMostradas.isEmpty
           ? const Center(child: Text('No se encontraron ventas.'))
-          : ListView.separated(
-              itemCount: controller.ventasMostradas.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, i) {
-                final v = controller.ventasMostradas[i];
-                return _VentaCard(
-                  venta: v,
-                  onDetalle: () => _showDetalle(v),
-                  onAbono: v.estadoEnum == EstadoVenta.confirmado &&
-                          v.saldoPendiente > 0
-                      ? () => _showAbono(v)
-                      : null,
-                  onEditar: v.estadoEnum == EstadoVenta.confirmado
-                      ? () => _editarVenta(v)
-                      : null,
-                  onAnular: v.estadoEnum == EstadoVenta.confirmado
-                      ? () => _confirmAnular(v)
-                      : null,
-                );
-              },
+          : RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: () async => controller.cargar(),
+              child: ListView.separated(
+                itemCount: controller.ventasMostradas.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, i) {
+                  final v = controller.ventasMostradas[i];
+                  return _VentaCard(
+                    venta: v,
+                    onDetalle: () => _showDetalle(v),
+                    onPdf: () => _descargarPdf(v),
+                    onAbono: v.estadoEnum == EstadoVenta.confirmado &&
+                            v.saldoPendiente > 0 &&
+                            v.clienteNombre.isNotEmpty
+                        ? () => _showAbono(v)
+                        : null,
+                    onEditar: v.estadoEnum == EstadoVenta.confirmado
+                        ? () => _editarVenta(v)
+                        : null,
+                    onAnular: v.estadoEnum == EstadoVenta.confirmado
+                        ? () => _confirmAnular(v)
+                        : null,
+                  );
+                },
+              ),
             ),
     };
   }
@@ -386,6 +406,7 @@ class _VentasScreenState extends State<VentasScreen> {
 class _VentaCard extends StatelessWidget {
   final Venta venta;
   final VoidCallback onDetalle;
+  final VoidCallback onPdf;
   final VoidCallback? onAbono;
   final VoidCallback? onEditar;
   final VoidCallback? onAnular;
@@ -393,6 +414,7 @@ class _VentaCard extends StatelessWidget {
   const _VentaCard({
     required this.venta,
     required this.onDetalle,
+    required this.onPdf,
     required this.onAbono,
     required this.onEditar,
     required this.onAnular,
@@ -573,7 +595,7 @@ class _VentaCard extends StatelessWidget {
                         case 'anular':
                           onAnular?.call();
                         case 'pdf':
-                          break;
+                          onPdf();
                       }
                     },
                   ),
@@ -672,15 +694,15 @@ class _VentaCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Row(children: [
                           Text(
-                            formatCop(venta.saldoPendiente.round()),
+                            formatCop(venta.saldoMostrado.round()),
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: venta.saldoPendiente > 0
+                              color: venta.saldoMostrado > 0
                                   ? const Color(0xFFB91C1C)
                                   : const Color(0xFF047857),
                             ),
                           ),
-                          if (venta.saldoPendiente == 0) ...[
+                          if (venta.saldoMostrado == 0) ...[
                             const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(

@@ -469,25 +469,29 @@ class _Body extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-      itemCount: ctrl.canciones.length,
-      itemBuilder: (_, i) {
-        final c = ctrl.canciones[i];
-        final isThisPlaying =
-            playingId == c.id && playerState == PlayerState.playing;
-        final isThisActive = playingId == c.id;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _CancionCard(
-            c: c,
-            isPlaying: isThisPlaying,
-            isActive: isThisActive,
-            onPlay: c.audioUrl != null ? () => onPlay(c) : null,
-            onDetalle: () => onDetalle(c),
-          ),
-        );
-      },
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: () async => context.read<RepertorioController>().cargar(),
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+        itemCount: ctrl.canciones.length,
+        itemBuilder: (_, i) {
+          final c = ctrl.canciones[i];
+          final isThisPlaying =
+              playingId == c.id && playerState == PlayerState.playing;
+          final isThisActive = playingId == c.id;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _CancionCard(
+              c: c,
+              isPlaying: isThisPlaying,
+              isActive: isThisActive,
+              onPlay: c.audioUrl != null ? () => onPlay(c) : null,
+              onDetalle: () => onDetalle(c),
+            ),
+          );
+        },
+      ),
     );
   }
 }

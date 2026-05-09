@@ -115,23 +115,26 @@ class ReservaService {
     required double monto,
     required String metodoPago,
     String? notas,
+    int? clientId,
   }) async {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
 
     final uri = Uri.parse(Env.endpoint('reservas/$reservaId/abonos'));
 
-    // El backend espera: { amount, date, method, notes }
     final now = DateTime.now();
     final date =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
-    final body = jsonEncode({
+    final bodyMap = <String, dynamic>{
       'amount': monto,
       'date': date,
       'method': metodoPago,
       if (notas != null && notas.isNotEmpty) 'notes': notas,
-    });
+      if (clientId != null && clientId > 0) 'clientId': clientId,
+    };
+
+    final body = jsonEncode(bodyMap);
 
     final response = await http
         .post(uri, headers: _buildHeaders(token), body: body)

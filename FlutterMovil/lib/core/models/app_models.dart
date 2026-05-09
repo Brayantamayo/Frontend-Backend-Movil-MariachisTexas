@@ -308,6 +308,7 @@ class Abono {
 class Reserva {
   final int id;
   final int cotizacionId;
+  final int? clientId;
   final String estado;
   final double totalValor;
   final double saldoPendiente;
@@ -328,6 +329,7 @@ class Reserva {
   const Reserva({
     required this.id,
     required this.cotizacionId,
+    this.clientId,
     required this.estado,
     required this.totalValor,
     required this.saldoPendiente,
@@ -349,6 +351,7 @@ class Reserva {
   Reserva copyWithChips(List<VentaServicio> newChips) => Reserva(
         id: id,
         cotizacionId: cotizacionId,
+        clientId: clientId,
         estado: estado,
         totalValor: totalValor,
         saldoPendiente: saldoPendiente,
@@ -385,6 +388,7 @@ class Reserva {
     return Reserva(
       id: _parseInt(j['id']),
       cotizacionId: _parseInt(j['cotizacionId'] ?? j['quotationId'] ?? 0),
+      clientId: _parseIntNull(j['clientId']),
       estado: (j['status'] as String?) ?? 'PENDIENTE',
       totalValor: _parseDouble(j['totalAmount'] ?? j['totalValor']),
       saldoPendiente: _parseDouble(j['pendingBalance'] ?? j['saldoPendiente']),
@@ -640,6 +644,10 @@ class Venta {
         EstadoVenta.finalizado => 'Finalizado',
         EstadoVenta.cancelada => 'Anulada',
       };
+
+  /// Saldo a mostrar en UI — finalizado siempre muestra 0 (pago completado)
+  double get saldoMostrado =>
+      estadoEnum == EstadoVenta.finalizado ? 0 : saldoPendiente;
 }
 
 List<Map<String, dynamic>> _toRawList(dynamic raw) {

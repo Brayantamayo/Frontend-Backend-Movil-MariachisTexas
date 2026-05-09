@@ -57,8 +57,8 @@ Future<void> descargarReservaPdf(Reserva r) async {
           pw.SizedBox(height: 14),
 
           // ── Servicios ────────────────────────────────────────────────────
-          if (r.servicios.isNotEmpty) ...[
-            _seccionServicios(r.servicios),
+          if (r.chips.isNotEmpty) ...[
+            _seccionServiciosChips(r.chips),
             pw.SizedBox(height: 14),
           ],
 
@@ -211,7 +211,8 @@ pw.Widget _fila(String label, String valor) {
   );
 }
 
-pw.Widget _seccionServicios(List<CotizacionServicio> servicios) {
+// Versión con VentaServicio (nombres reales del catálogo)
+pw.Widget _seccionServiciosChips(List<VentaServicio> servicios) {
   return pw.Container(
     decoration: pw.BoxDecoration(
       border: pw.Border.all(color: _border),
@@ -230,94 +231,74 @@ pw.Widget _seccionServicios(List<CotizacionServicio> servicios) {
               topRight: pw.Radius.circular(8),
             ),
           ),
-          child: pw.Text(
-            'Servicios',
-            style: pw.TextStyle(
-              fontSize: 12,
-              fontWeight: pw.FontWeight.bold,
-              color: _primary,
-            ),
-          ),
+          child: pw.Text('Servicios',
+              style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                  color: _primary)),
         ),
         pw.Divider(color: _border, height: 1),
         pw.Padding(
           padding: const pw.EdgeInsets.all(14),
-          child: pw.Column(
-            children: [
-              // Encabezado tabla
-              pw.Row(
-                children: [
-                  pw.Expanded(
-                    child: pw.Text('Servicio',
-                        style: pw.TextStyle(
-                            fontSize: 10,
-                            fontWeight: pw.FontWeight.bold,
-                            color: _textMuted)),
-                  ),
-                  pw.SizedBox(
-                    width: 40,
-                    child: pw.Text('Cant.',
-                        textAlign: pw.TextAlign.center,
-                        style: pw.TextStyle(
-                            fontSize: 10,
-                            fontWeight: pw.FontWeight.bold,
-                            color: _textMuted)),
-                  ),
-                  pw.SizedBox(
-                    width: 80,
-                    child: pw.Text('Precio',
-                        textAlign: pw.TextAlign.right,
-                        style: pw.TextStyle(
-                            fontSize: 10,
-                            fontWeight: pw.FontWeight.bold,
-                            color: _textMuted)),
-                  ),
-                  pw.SizedBox(
-                    width: 80,
-                    child: pw.Text('Subtotal',
-                        textAlign: pw.TextAlign.right,
-                        style: pw.TextStyle(
-                            fontSize: 10,
-                            fontWeight: pw.FontWeight.bold,
-                            color: _textMuted)),
-                  ),
-                ],
-              ),
-              pw.Divider(color: _border),
-              ...servicios.map(
-                (s) => pw.Padding(
+          child: pw.Column(children: [
+            pw.Row(children: [
+              pw.Expanded(
+                  child: pw.Text('Servicio',
+                      style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                          color: _textMuted))),
+              pw.SizedBox(
+                  width: 40,
+                  child: pw.Text('Cant.',
+                      textAlign: pw.TextAlign.center,
+                      style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                          color: _textMuted))),
+              pw.SizedBox(
+                  width: 80,
+                  child: pw.Text('Precio',
+                      textAlign: pw.TextAlign.right,
+                      style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                          color: _textMuted))),
+              pw.SizedBox(
+                  width: 80,
+                  child: pw.Text('Subtotal',
+                      textAlign: pw.TextAlign.right,
+                      style: pw.TextStyle(
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                          color: _textMuted))),
+            ]),
+            pw.Divider(color: _border),
+            ...servicios.map((s) => pw.Padding(
                   padding: const pw.EdgeInsets.only(bottom: 4),
-                  child: pw.Row(
-                    children: [
-                      pw.Expanded(
-                        child: pw.Text(s.servicio.nombre,
-                            style: const pw.TextStyle(fontSize: 11)),
-                      ),
-                      pw.SizedBox(
+                  child: pw.Row(children: [
+                    pw.Expanded(
+                        child: pw.Text(s.nombre,
+                            style: const pw.TextStyle(fontSize: 11))),
+                    pw.SizedBox(
                         width: 40,
                         child: pw.Text('${s.cantidad}',
                             textAlign: pw.TextAlign.center,
-                            style: const pw.TextStyle(fontSize: 11)),
-                      ),
-                      pw.SizedBox(
+                            style: const pw.TextStyle(fontSize: 11))),
+                    pw.SizedBox(
                         width: 80,
-                        child: pw.Text(_cop(s.servicio.precio.round()),
+                        child: pw.Text(_cop(s.precio.round()),
                             textAlign: pw.TextAlign.right,
-                            style: const pw.TextStyle(fontSize: 11)),
-                      ),
-                      pw.SizedBox(
+                            style: const pw.TextStyle(fontSize: 11))),
+                    pw.SizedBox(
                         width: 80,
                         child: pw.Text(_cop(s.subtotal.round()),
                             textAlign: pw.TextAlign.right,
                             style: pw.TextStyle(
-                                fontSize: 11, fontWeight: pw.FontWeight.bold)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+                                fontSize: 11, fontWeight: pw.FontWeight.bold))),
+                  ]),
+                )),
+          ]),
         ),
       ],
     ),

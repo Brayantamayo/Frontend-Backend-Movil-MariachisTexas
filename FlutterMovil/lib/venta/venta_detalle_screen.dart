@@ -124,12 +124,12 @@ class VentaDetalleScreen extends StatelessWidget {
                 ),
                 _FilaFinanciera(
                   label: 'Saldo pendiente',
-                  valor: formatCop(v.saldoPendiente.round()),
-                  color: v.saldoPendiente > 0
+                  valor: formatCop(v.saldoMostrado.round()),
+                  color: v.saldoMostrado > 0
                       ? const Color(0xFFB91C1C)
                       : const Color(0xFF047857),
-                  bold: v.saldoPendiente > 0,
-                  badge: v.saldoPendiente == 0 ? 'PAGADO' : null,
+                  bold: v.saldoMostrado > 0,
+                  badge: v.saldoMostrado == 0 ? 'PAGADO' : null,
                 ),
               ],
             ),

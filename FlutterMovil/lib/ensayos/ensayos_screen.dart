@@ -7,6 +7,7 @@ import '../core/models/app_models.dart';
 import '../ui/screen_header.dart';
 import 'ensayo_controller.dart';
 import 'ensayo_detalle_screen.dart';
+import 'editar_ensayo_screen.dart';
 
 class EnsayosScreen extends StatefulWidget {
   const EnsayosScreen({super.key});
@@ -63,6 +64,14 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
         builder: (_) => EnsayoDetalleScreen(ensayoId: e.id),
       ),
     );
+  }
+
+  Future<void> _editarEnsayo(Ensayo e) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => EditarEnsayoScreen(ensayo: e)),
+    );
+    if (result == true) _controller.cargar();
   }
 
   Future<void> _toggleEstado(Ensayo e) async {
@@ -457,14 +466,21 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
         ),
         const SizedBox(height: 12),
         Expanded(
-          child: ListView.separated(
-            itemCount: ensayosDelDia.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, i) => _EnsayoCard(
-              e: ensayosDelDia[i],
-              onDetalle: () => _showDetalle(ensayosDelDia[i]),
-              onToggle: () => _toggleEstado(ensayosDelDia[i]),
-              onEliminar: () => _confirmEliminar(ensayosDelDia[i]),
+          child: RefreshIndicator(
+            color: AppColors.primary,
+            onRefresh: () async => controller.cargar(),
+            child: ListView.separated(
+              itemCount: ensayosDelDia.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, i) => _EnsayoCard(
+                e: ensayosDelDia[i],
+                onDetalle: () => _showDetalle(ensayosDelDia[i]),
+                onEditar: ensayosDelDia[i].estado == EstadoEnsayo.pendiente
+                    ? () => _editarEnsayo(ensayosDelDia[i])
+                    : null,
+                onToggle: () => _toggleEstado(ensayosDelDia[i]),
+                onEliminar: () => _confirmEliminar(ensayosDelDia[i]),
+              ),
             ),
           ),
         ),
@@ -478,12 +494,14 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
 class _EnsayoCard extends StatelessWidget {
   final Ensayo e;
   final VoidCallback onDetalle;
+  final VoidCallback? onEditar;
   final VoidCallback onToggle;
   final VoidCallback onEliminar;
 
   const _EnsayoCard({
     required this.e,
     required this.onDetalle,
+    required this.onEditar,
     required this.onToggle,
     required this.onEliminar,
   });
@@ -594,52 +612,55 @@ class _EnsayoCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   PopupMenuButton<String>(
-                    itemBuilder: (_) => [
-                      const PopupMenuItem(
+                    itemBuilder: (_) {
+                      final items = <PopupMenuEntry<String>>[];
+                      // Ver detalle — siempre
+                      items.add(const PopupMenuItem(
                         value: 'detalle',
-                        child: Row(
-                          children: [
-                            Icon(Icons.visibility_outlined, size: 18),
+                        child: Row(children: [
+                          Icon(Icons.visibility_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text('Ver Detalle'),
+                        ]),
+                      ));
+                      // Solo pendiente
+                      if (!listo) {
+                        items.add(const PopupMenuItem(
+                          value: 'editar',
+                          child: Row(children: [
+                            Icon(Icons.edit_outlined, size: 18),
                             SizedBox(width: 8),
-                            Text('Ver Detalle'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'toggle',
-                        child: Row(
-                          children: [
-                            Icon(
-                              listo
-                                  ? Icons.pending_outlined
-                                  : Icons.check_circle_outline,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(listo
-                                ? 'Marcar como Pendiente'
-                                : 'Marcar como Listo'),
-                          ],
-                        ),
-                      ),
-                      const PopupMenuDivider(),
-                      const PopupMenuItem(
-                        value: 'eliminar',
-                        child: Row(
-                          children: [
+                            Text('Editar'),
+                          ]),
+                        ));
+                        items.add(const PopupMenuItem(
+                          value: 'toggle',
+                          child: Row(children: [
+                            Icon(Icons.check_circle_outline, size: 18),
+                            SizedBox(width: 8),
+                            Text('Marcar como Listo'),
+                          ]),
+                        ));
+                        items.add(const PopupMenuDivider());
+                        items.add(const PopupMenuItem(
+                          value: 'eliminar',
+                          child: Row(children: [
                             Icon(Icons.delete_outline,
                                 size: 18, color: Colors.red),
                             SizedBox(width: 8),
                             Text('Eliminar',
                                 style: TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                      ),
-                    ],
+                          ]),
+                        ));
+                      }
+                      return items;
+                    },
                     onSelected: (v) {
                       switch (v) {
                         case 'detalle':
                           onDetalle();
+                        case 'editar':
+                          onEditar?.call();
                         case 'toggle':
                           onToggle();
                         case 'eliminar':

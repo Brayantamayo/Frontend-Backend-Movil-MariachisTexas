@@ -38,6 +38,10 @@ class VentaController extends ChangeNotifier {
       final extras =
           ventasDeAnuladas.where((v) => !ids.contains(v.id)).toList();
       ventas = [...ventasNormales, ...extras];
+
+      // Auto-abonar saldo pendiente en ventas finalizadas
+      await _autoAbonarFinalizadas();
+
       _ventasFiltradas = [];
       status = VentaStatus.listo;
     } catch (e) {
@@ -45,6 +49,27 @@ class VentaController extends ChangeNotifier {
       status = VentaStatus.error;
     }
     notifyListeners();
+  }
+
+  /// Registra automáticamente el abono del saldo restante
+  /// en ventas que ya finalizaron y aún tienen saldo pendiente
+  Future<void> _autoAbonarFinalizadas() async {
+    for (final v in ventas) {
+      if (v.estadoEnum == EstadoVenta.finalizado &&
+          v.saldoPendiente > 0 &&
+          v.clienteNombre.isNotEmpty) {
+        try {
+          await _service.registrarAbono(
+            v.id,
+            monto: v.saldoPendiente,
+            metodoPago: 'EFECTIVO',
+            notas: 'Abono automático al finalizar',
+          );
+        } catch (_) {
+          // Si falla (ya abonado, sin cliente, etc.) continuar sin interrumpir
+        }
+      }
+    }
   }
 
   void buscar(String query) {

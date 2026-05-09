@@ -19,7 +19,13 @@ class VentaService {
     }
     try {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
-      return body['message']?.toString() ?? 'Error ${response.statusCode}';
+      final msg = body['message']?.toString() ?? 'Error ${response.statusCode}';
+      // Traducir errores comunes del backend
+      if (msg.toLowerCase().contains('cliente') ||
+          msg.toLowerCase().contains('client')) {
+        return 'Esta reserva no tiene cliente asociado. No se puede registrar el abono.';
+      }
+      return msg;
     } catch (_) {
       return 'Respuesta inválida del servidor (${response.statusCode})';
     }
@@ -68,6 +74,7 @@ class VentaService {
     required double monto,
     required String metodoPago,
     String? notas,
+    int? clientId,
   }) async {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');
@@ -77,18 +84,20 @@ class VentaService {
     final date =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
-    final body = jsonEncode({
+    final bodyMap = <String, dynamic>{
       'amount': monto,
       'date': date,
       'method': metodoPago,
       if (notas != null && notas.isNotEmpty) 'notes': notas,
-    });
+      if (clientId != null && clientId > 0) 'clientId': clientId,
+    };
 
     final response = await http
-        .post(uri, headers: _buildHeaders(token), body: body)
+        .post(uri, headers: _buildHeaders(token), body: jsonEncode(bodyMap))
         .timeout(NetworkConfig.timeout);
 
     if (response.statusCode != 200 && response.statusCode != 201) {
+      print('=== ABONO ERROR body: ${response.body}');
       throw Exception(_extractErrorMessage(response));
     }
   }

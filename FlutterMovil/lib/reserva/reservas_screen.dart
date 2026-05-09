@@ -395,42 +395,48 @@ class _ReservasScreenState extends State<ReservasScreen> {
         ),
       ReservaStatus.listo => controller.reservas.isEmpty
           ? const Center(child: Text('No se encontraron reservas.'))
-          : ListView.separated(
-              itemCount: controller.reservas
-                  .where((r) =>
-                      (r.estadoEnum == EstadoReserva.pendiente) ||
-                      (r.estadoEnum == EstadoReserva.anulada &&
-                          r.abonos.isEmpty))
-                  .length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, i) {
-                final lista = controller.reservas
+          : RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: () async => _controller.cargar(),
+              child: ListView.separated(
+                itemCount: controller.reservas
                     .where((r) =>
-                        (r.estadoEnum == EstadoReserva.pendiente) ||
-                        (r.estadoEnum == EstadoReserva.anulada &&
-                            r.abonos.isEmpty))
-                    .toList();
-                final r = lista[i];
-                return _ReservaCard(
-                  r: r,
-                  onDetalle: () => _showDetalle(r),
-                  onEditar: r.estadoEnum == EstadoReserva.pendiente
-                      ? () => _editarReserva(r)
-                      : null,
-                  onAbono: r.estadoEnum == EstadoReserva.pendiente &&
-                          r.saldoPendiente > 0
-                      ? () => _showAbono(r)
-                      : null,
-                  onAnular: r.estadoEnum == EstadoReserva.pendiente
-                      ? () => _confirmAnular(r)
-                      : null,
-                  onEliminar:
-                      r.estadoEnum == EstadoReserva.anulada && r.abonos.isEmpty
-                          ? () => _confirmEliminar(r)
-                          : null,
-                  onPdf: () => _descargarPdf(r),
-                );
-              },
+                        r.clienteNombre.isNotEmpty &&
+                        ((r.estadoEnum == EstadoReserva.pendiente) ||
+                            (r.estadoEnum == EstadoReserva.anulada &&
+                                r.abonos.isEmpty)))
+                    .length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, i) {
+                  final lista = controller.reservas
+                      .where((r) =>
+                          r.clienteNombre.isNotEmpty &&
+                          ((r.estadoEnum == EstadoReserva.pendiente) ||
+                              (r.estadoEnum == EstadoReserva.anulada &&
+                                  r.abonos.isEmpty)))
+                      .toList();
+                  final r = lista[i];
+                  return _ReservaCard(
+                    r: r,
+                    onDetalle: () => _showDetalle(r),
+                    onEditar: r.estadoEnum == EstadoReserva.pendiente
+                        ? () => _editarReserva(r)
+                        : null,
+                    onAbono: r.estadoEnum == EstadoReserva.pendiente &&
+                            r.saldoPendiente > 0
+                        ? () => _showAbono(r)
+                        : null,
+                    onAnular: r.estadoEnum == EstadoReserva.pendiente
+                        ? () => _confirmAnular(r)
+                        : null,
+                    onEliminar: r.estadoEnum == EstadoReserva.anulada &&
+                            r.abonos.isEmpty
+                        ? () => _confirmEliminar(r)
+                        : null,
+                    onPdf: () => _descargarPdf(r),
+                  );
+                },
+              ),
             ),
     };
   }

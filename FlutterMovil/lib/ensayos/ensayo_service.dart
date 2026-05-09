@@ -83,6 +83,33 @@ class EnsayoService {
     if (res.statusCode != 200) throw Exception(_msg(res.body));
   }
 
+  Future<void> actualizarEnsayo(
+    int id, {
+    required String titulo,
+    required String lugar,
+    required String fecha,
+    required String hora,
+    String? notas,
+  }) async {
+    final token = await _getToken();
+    if (token == null) throw Exception('No autenticado');
+
+    final body = jsonEncode({
+      'title': titulo,
+      'location': lugar,
+      'date': fecha,
+      'time': hora,
+      if (notas != null) 'notes': notas,
+    });
+
+    final res = await http
+        .put(Uri.parse(Env.endpoint('ensayos/$id')),
+            headers: _headers(token), body: body)
+        .timeout(NetworkConfig.timeout);
+
+    if (res.statusCode != 200) throw Exception(_msg(res.body));
+  }
+
   Future<void> eliminarEnsayo(int id) async {
     final token = await _getToken();
     if (token == null) throw Exception('No autenticado');

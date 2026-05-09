@@ -297,27 +297,31 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
         ),
       CotizacionStatus.listo => controller.cotizaciones.isEmpty
           ? const Center(child: Text('No se encontraron cotizaciones.'))
-          : ListView.separated(
-              itemCount: controller.cotizaciones.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, i) => _CotizacionCard(
-                c: controller.cotizaciones[i],
-                onDetalle: () => _showDetalle(controller.cotizaciones[i]),
-                onConvertir: controller.cotizaciones[i].puedeConvertirse
-                    ? () => _confirmConvertir(controller.cotizaciones[i])
-                    : null,
-                onAnular: controller.cotizaciones[i].puedeAnularse
-                    ? () => _confirmAnular(controller.cotizaciones[i])
-                    : null,
-                onEliminar: controller.cotizaciones[i].estado ==
-                        EstadoCotizacion.anulada
-                    ? () => _confirmEliminar(controller.cotizaciones[i])
-                    : null,
-                onVerPDF: () => _verPDF(controller.cotizaciones[i]),
-                onEditar: controller.cotizaciones[i].estado ==
-                        EstadoCotizacion.enEspera
-                    ? () => _editarCotizacion(controller.cotizaciones[i])
-                    : null,
+          : RefreshIndicator(
+              color: AppColors.primary,
+              onRefresh: () async => controller.cargar(),
+              child: ListView.separated(
+                itemCount: controller.cotizaciones.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, i) => _CotizacionCard(
+                  c: controller.cotizaciones[i],
+                  onDetalle: () => _showDetalle(controller.cotizaciones[i]),
+                  onConvertir: controller.cotizaciones[i].puedeConvertirse
+                      ? () => _confirmConvertir(controller.cotizaciones[i])
+                      : null,
+                  onAnular: controller.cotizaciones[i].puedeAnularse
+                      ? () => _confirmAnular(controller.cotizaciones[i])
+                      : null,
+                  onEliminar: controller.cotizaciones[i].estado ==
+                          EstadoCotizacion.anulada
+                      ? () => _confirmEliminar(controller.cotizaciones[i])
+                      : null,
+                  onVerPDF: () => _verPDF(controller.cotizaciones[i]),
+                  onEditar: controller.cotizaciones[i].estado ==
+                          EstadoCotizacion.enEspera
+                      ? () => _editarCotizacion(controller.cotizaciones[i])
+                      : null,
+                ),
               ),
             ),
     };

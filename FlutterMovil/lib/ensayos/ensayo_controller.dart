@@ -75,6 +75,27 @@ class EnsayoController extends ChangeNotifier {
     }
   }
 
+  // ── Actualizar ensayo ─────────────────────────────────────────────────────
+  Future<bool> actualizarEnsayo(
+    int id, {
+    required String titulo,
+    required String lugar,
+    required String fecha,
+    required String hora,
+    String? notas,
+  }) async {
+    try {
+      await _service.actualizarEnsayo(id,
+          titulo: titulo, lugar: lugar, fecha: fecha, hora: hora, notas: notas);
+      await cargar();
+      return true;
+    } catch (e) {
+      errorMsg = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
   // ── Marcar como listo ──────────────────────────────────────────────────────
   Future<bool> marcarComoListo(int id) async {
     try {
