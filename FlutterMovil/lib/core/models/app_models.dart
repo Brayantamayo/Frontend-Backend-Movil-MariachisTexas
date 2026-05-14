@@ -614,6 +614,13 @@ class Venta {
       );
 
   EstadoVenta get estadoEnum {
+    // Anulada: el estado del backend lo indica explícitamente — tiene prioridad
+    if (estado.toUpperCase() == 'ANULADA' ||
+        estado.toUpperCase() == 'ANULADO' ||
+        estado.toUpperCase() == 'CANCELADA' ||
+        estado.toUpperCase() == 'CANCELADO') {
+      return EstadoVenta.cancelada;
+    }
     // Finalizado: la fecha y hora del evento ya pasaron
     if (fechaEvento != null && horaFin != null) {
       try {
@@ -628,14 +635,7 @@ class Venta {
         if (DateTime.now().isAfter(finDt)) return EstadoVenta.finalizado;
       } catch (_) {}
     }
-    // Confirmado: tiene abonos
-    if (abonos.isNotEmpty) return EstadoVenta.confirmado;
-    // Cancelada
-    if (estado.toUpperCase() == 'CANCELADA' ||
-        estado.toUpperCase() == 'CANCELADO') {
-      return EstadoVenta.cancelada;
-    }
-    // Por defecto confirmado (viene de reserva confirmada)
+    // Por defecto confirmado
     return EstadoVenta.confirmado;
   }
 
@@ -901,8 +901,14 @@ class Ensayo {
         updatedAt: _parseDateTime(j['updatedAt'] ?? j['updated_at']),
       );
 
+  /// El ensayo pasa a "listo" automáticamente cuando su fecha y hora ya pasaron
+  EstadoEnsayo get estadoEfectivo {
+    if (DateTime.now().isAfter(fechaHora)) return EstadoEnsayo.listo;
+    return EstadoEnsayo.pendiente;
+  }
+
   String get estadoLabel =>
-      estado == EstadoEnsayo.listo ? 'listo' : 'pendiente';
+      estadoEfectivo == EstadoEnsayo.listo ? 'listo' : 'pendiente';
 }
 
 // ─── ENUM HELPERS ─────────────────────────────────────────────────────────────

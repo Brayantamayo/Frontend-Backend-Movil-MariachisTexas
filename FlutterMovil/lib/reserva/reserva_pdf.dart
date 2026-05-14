@@ -2,6 +2,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
+import 'package:mariachi_admin/core/format/time.dart';
 
 // ─── COLORES ──────────────────────────────────────────────────────────────────
 const _primary = PdfColor.fromInt(0xFF7B0D1E); // AppColors.primary
@@ -41,7 +42,8 @@ Future<void> descargarReservaPdf(Reserva r) async {
           // ── Info del evento ──────────────────────────────────────────────
           _seccion('Información del Evento', [
             _fila('Fecha', fecha),
-            _fila('Horario', '${r.horaInicio} – ${r.horaFin}'),
+            _fila('Horario',
+                '${formatHora24a12(r.horaInicio)} – ${formatHora24a12(r.horaFin)}'),
             _fila('Lugar', r.ubicacion),
             if (r.homenajeado.isNotEmpty) _fila('Homenajeado', r.homenajeado),
           ]),

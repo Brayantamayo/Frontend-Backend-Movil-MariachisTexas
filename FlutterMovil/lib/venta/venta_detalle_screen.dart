@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/format/currency.dart';
+import '../core/format/time.dart';
 import '../core/theme/app_colors.dart';
 import '../core/models/app_models.dart';
 
@@ -73,7 +74,8 @@ class VentaDetalleScreen extends StatelessWidget {
                   if (v.horaInicio != null && v.horaFin != null)
                     _Fila(
                         label: 'Horario',
-                        valor: '${v.horaInicio} - ${v.horaFin}'),
+                        valor:
+                            '${formatHora24a12(v.horaInicio!)} - ${formatHora24a12(v.horaFin!)}'),
                   if (v.ubicacion != null && v.ubicacion!.isNotEmpty)
                     _Fila(label: 'Lugar', valor: v.ubicacion!),
                   if (v.notas != null && v.notas!.isNotEmpty)

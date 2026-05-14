@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/app_colors.dart';
 import '../core/models/app_models.dart';
+import '../core/format/time.dart';
 import '../ui/screen_header.dart';
 import 'ensayo_controller.dart';
 import 'ensayo_detalle_screen.dart';
@@ -75,7 +76,7 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
   }
 
   Future<void> _toggleEstado(Ensayo e) async {
-    final esListo = e.estado == EstadoEnsayo.listo;
+    final esListo = e.estadoEfectivo == EstadoEnsayo.listo;
 
     final ok = await showDialog<bool>(
       context: context,
@@ -370,7 +371,7 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
                           children: ensayosDelDia.take(3).map((ensayo) {
                             final color = isSelected
                                 ? Colors.white
-                                : ensayo.estado == EstadoEnsayo.listo
+                                : ensayo.estadoEfectivo == EstadoEnsayo.listo
                                     ? const Color(0xFF047857)
                                     : const Color(0xFFB45309);
                             return Container(
@@ -475,9 +476,10 @@ class _EnsayosScreenState extends State<EnsayosScreen> {
               itemBuilder: (context, i) => _EnsayoCard(
                 e: ensayosDelDia[i],
                 onDetalle: () => _showDetalle(ensayosDelDia[i]),
-                onEditar: ensayosDelDia[i].estado == EstadoEnsayo.pendiente
-                    ? () => _editarEnsayo(ensayosDelDia[i])
-                    : null,
+                onEditar:
+                    ensayosDelDia[i].estadoEfectivo == EstadoEnsayo.pendiente
+                        ? () => _editarEnsayo(ensayosDelDia[i])
+                        : null,
                 onToggle: () => _toggleEstado(ensayosDelDia[i]),
                 onEliminar: () => _confirmEliminar(ensayosDelDia[i]),
               ),
@@ -507,21 +509,21 @@ class _EnsayoCard extends StatelessWidget {
   });
 
   Color _pillBg() {
-    return e.estado == EstadoEnsayo.listo
+    return e.estadoEfectivo == EstadoEnsayo.listo
         ? const Color(0xFFDCFCE7)
         : const Color(0xFFFEF3C7);
   }
 
   Color _pillFg() {
-    return e.estado == EstadoEnsayo.listo
+    return e.estadoEfectivo == EstadoEnsayo.listo
         ? const Color(0xFF047857)
         : const Color(0xFFB45309);
   }
 
   @override
   Widget build(BuildContext context) {
-    final listo = e.estado == EstadoEnsayo.listo;
-    final horaFormato = DateFormat('HH:mm').format(e.fechaHora);
+    final listo = e.estadoEfectivo == EstadoEnsayo.listo;
+    final horaFormato = formatDateTimeHora12(e.fechaHora);
 
     return InkWell(
       onTap: onDetalle,
@@ -631,14 +633,6 @@ class _EnsayoCard extends StatelessWidget {
                             Icon(Icons.edit_outlined, size: 18),
                             SizedBox(width: 8),
                             Text('Editar'),
-                          ]),
-                        ));
-                        items.add(const PopupMenuItem(
-                          value: 'toggle',
-                          child: Row(children: [
-                            Icon(Icons.check_circle_outline, size: 18),
-                            SizedBox(width: 8),
-                            Text('Marcar como Listo'),
                           ]),
                         ));
                         items.add(const PopupMenuDivider());

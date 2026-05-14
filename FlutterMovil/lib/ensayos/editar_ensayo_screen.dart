@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
 import '../core/models/app_models.dart';
+import '../core/format/time.dart';
 import 'ensayo_controller.dart';
 
 class EditarEnsayoScreen extends StatefulWidget {
@@ -16,7 +17,6 @@ class _EditarEnsayoScreenState extends State<EditarEnsayoScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _tituloCtrl;
   late final TextEditingController _lugarCtrl;
-  late final TextEditingController _notasCtrl;
   late DateTime _fecha;
   TimeOfDay? _hora;
   bool _guardando = false;
@@ -27,7 +27,6 @@ class _EditarEnsayoScreenState extends State<EditarEnsayoScreen> {
     final e = widget.ensayo;
     _tituloCtrl = TextEditingController(text: e.nombre);
     _lugarCtrl = TextEditingController(text: e.lugar);
-    _notasCtrl = TextEditingController(text: e.notas ?? '');
     _fecha = e.fechaHora;
     _hora = TimeOfDay(hour: e.fechaHora.hour, minute: e.fechaHora.minute);
   }
@@ -36,13 +35,15 @@ class _EditarEnsayoScreenState extends State<EditarEnsayoScreen> {
   void dispose() {
     _tituloCtrl.dispose();
     _lugarCtrl.dispose();
-    _notasCtrl.dispose();
     super.dispose();
   }
 
+  /// Formato 24h para enviar al backend
   String _formatTime(TimeOfDay t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
+  /// Formato 12h AM/PM para mostrar al usuario
+  String _displayTime(TimeOfDay t) => formatTimeOfDay12(t.hour, t.minute);
   Future<void> _seleccionarFecha() async {
     final fecha = await showDatePicker(
       context: context,
@@ -97,7 +98,7 @@ class _EditarEnsayoScreenState extends State<EditarEnsayoScreen> {
                               : const Color(0xFF047857),
                         ),
                       ),
-                      title: Text(hora,
+                      title: Text(formatHora24a12(hora),
                           style: TextStyle(
                             fontWeight: esSeleccionada
                                 ? FontWeight.w900
@@ -158,7 +159,6 @@ class _EditarEnsayoScreenState extends State<EditarEnsayoScreen> {
       lugar: _lugarCtrl.text.trim(),
       fecha: fechaStr,
       hora: _formatTime(_hora!),
-      notas: _notasCtrl.text.trim(),
     );
 
     setState(() => _guardando = false);
@@ -253,22 +253,13 @@ class _EditarEnsayoScreenState extends State<EditarEnsayoScreen> {
               leading: const Icon(Icons.schedule),
               title: const Text('Hora'),
               subtitle: Text(
-                  _hora != null ? _formatTime(_hora!) : 'Seleccionar',
+                  _hora != null ? _displayTime(_hora!) : 'Seleccionar',
                   style: const TextStyle(fontWeight: FontWeight.w600)),
               trailing: const Icon(Icons.edit),
               onTap: _seleccionarHora,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                   side: const BorderSide(color: Color(0xFFE2E8F0))),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _notasCtrl,
-              decoration: const InputDecoration(
-                  labelText: 'Notas',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.notes)),
-              maxLines: 3,
             ),
             const SizedBox(height: 32),
             FilledButton.icon(

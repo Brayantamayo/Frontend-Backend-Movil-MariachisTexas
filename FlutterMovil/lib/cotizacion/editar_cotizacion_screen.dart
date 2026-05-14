@@ -110,6 +110,12 @@ class _EditarCotizacionScreenState extends State<EditarCotizacionScreen> {
   String _formatTime(TimeOfDay t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
+  String _formatTime12(TimeOfDay t) {
+    final hour = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
+    final period = t.period == DayPeriod.am ? 'AM' : 'PM';
+    return '${hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')} $period';
+  }
+
   double get _totalCalculado {
     double total = 0;
     for (final entry in _serviciosSeleccionados.entries) {
@@ -194,9 +200,17 @@ class _EditarCotizacionScreenState extends State<EditarCotizacionScreen> {
 
   Future<void> _seleccionarHora(bool esInicio) async {
     final horaActual = _horaInicio;
-    final horas = <String>[];
+    // Generar horas de 8 a 23 con etiquetas AM/PM
+    final horas = <Map<String, dynamic>>[];
     for (int h = 8; h <= 23; h++) {
-      horas.add('${h.toString().padLeft(2, '0')}:00');
+      final t = TimeOfDay(hour: h, minute: 0);
+      final hour12 = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
+      final period = t.period == DayPeriod.am ? 'AM' : 'PM';
+      horas.add({
+        'hour24': '${h.toString().padLeft(2, '0')}:00',
+        'label': '${hour12.toString().padLeft(2, '0')}:00 $period',
+        'hour': h,
+      });
     }
 
     final horaSeleccionada = await showDialog<String>(
@@ -215,10 +229,10 @@ class _EditarCotizacionScreenState extends State<EditarCotizacionScreen> {
                   shrinkWrap: true,
                   itemCount: horas.length,
                   itemBuilder: (_, i) {
-                    final hora = horas[i];
+                    final item = horas[i];
                     final esSeleccionada = horaActual != null &&
                         '${horaActual.hour.toString().padLeft(2, '0')}:${horaActual.minute.toString().padLeft(2, '0')}' ==
-                            hora;
+                            item['hour24'];
                     return ListTile(
                       dense: true,
                       tileColor: esSeleccionada
@@ -236,7 +250,7 @@ class _EditarCotizacionScreenState extends State<EditarCotizacionScreen> {
                               : const Color(0xFF047857),
                         ),
                       ),
-                      title: Text(hora,
+                      title: Text(item['label'],
                           style: TextStyle(
                             fontWeight: esSeleccionada
                                 ? FontWeight.w900
@@ -250,7 +264,7 @@ class _EditarCotizacionScreenState extends State<EditarCotizacionScreen> {
                           ? const Icon(Icons.check_circle,
                               color: AppColors.primary, size: 18)
                           : null,
-                      onTap: () => Navigator.pop(ctx, hora),
+                      onTap: () => Navigator.pop(ctx, item['hour24']),
                     );
                   },
                 ),
@@ -539,7 +553,7 @@ class _EditarCotizacionScreenState extends State<EditarCotizacionScreen> {
               title: const Text('Hora de Inicio'),
               subtitle: Text(
                   _horaInicio != null
-                      ? _formatTime(_horaInicio!)
+                      ? _formatTime12(_horaInicio!)
                       : 'Seleccionar',
                   style: const TextStyle(fontWeight: FontWeight.w600)),
               trailing: const Icon(Icons.edit),
@@ -571,7 +585,7 @@ class _EditarCotizacionScreenState extends State<EditarCotizacionScreen> {
                                 fontSize: 12, color: AppColors.textMuted)),
                         Text(
                           _horaFinCalculada != null
-                              ? '${_formatTime(_horaInicio!)} → ${_formatTime(_horaFinCalculada!)}  (${1 + _horasExtras}h)'
+                              ? '${_formatTime12(_horaInicio!)} → ${_formatTime12(_horaFinCalculada!)}  (${1 + _horasExtras}h)'
                               : 'Selecciona hora de inicio primero',
                           style: const TextStyle(
                               fontWeight: FontWeight.w600,

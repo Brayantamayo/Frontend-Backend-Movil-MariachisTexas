@@ -49,7 +49,7 @@ class EnsayoController extends ChangeNotifier {
   void _aplicarFiltros() {
     var lista = List<Ensayo>.from(_todosOriginales);
     if (_estadoFiltro != null) {
-      lista = lista.where((e) => e.estado == _estadoFiltro).toList();
+      lista = lista.where((e) => e.estadoEfectivo == _estadoFiltro).toList();
     }
     if (_query.trim().isNotEmpty) {
       final lower = _query.toLowerCase();

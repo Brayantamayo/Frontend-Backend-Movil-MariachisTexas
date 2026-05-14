@@ -2,6 +2,7 @@
 import 'package:provider/provider.dart';
 
 import '../core/format/currency.dart';
+import '../core/format/time.dart';
 import '../core/theme/app_colors.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
 import 'reserva_controller.dart';
@@ -248,7 +249,7 @@ class _ReservaDetalleScreenState extends State<ReservaDetalleScreen> {
                 decoration: const InputDecoration(
                     labelText: 'Hora inicio',
                     border: OutlineInputBorder(),
-                    hintText: 'HH:MM'),
+                    hintText: 'hh:mm AM/PM'),
                 onChanged: (v) => setS(() => horaIni = v)),
             const SizedBox(height: 12),
             TextFormField(
@@ -480,7 +481,10 @@ class _ReservaDetalleScreenState extends State<ReservaDetalleScreen> {
               label: 'Fecha',
               valor:
                   '${r.fechaEvento.day}/${r.fechaEvento.month}/${r.fechaEvento.year}'),
-          _Fila(label: 'Horario', valor: '${r.horaInicio} - ${r.horaFin}'),
+          _Fila(
+              label: 'Horario',
+              valor:
+                  '${formatHora24a12(r.horaInicio)} - ${formatHora24a12(r.horaFin)}'),
           _Fila(label: 'Lugar', valor: r.ubicacion),
         ]),
         const SizedBox(height: 12),

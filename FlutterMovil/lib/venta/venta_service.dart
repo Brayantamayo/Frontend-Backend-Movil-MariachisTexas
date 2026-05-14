@@ -145,7 +145,7 @@ class VentaService {
                 'totalAmount': m['totalAmount'] ?? 0,
                 'pendingAmount': m['pendingBalance'] ?? 0,
                 'paidAmount': m['paidAmount'] ?? 0,
-                'status': 'CONFIRMADA',
+                'status': 'ANULADA',
                 'date': m['createdAt'] ?? m['eventDate'],
                 'services': m['selectedServices'] ?? [],
                 'abonos': pagos,

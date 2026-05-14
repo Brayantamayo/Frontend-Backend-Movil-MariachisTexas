@@ -2,6 +2,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
+import 'package:mariachi_admin/core/format/time.dart';
 
 const _primary = PdfColor.fromInt(0xFF7B0D1E);
 const _textMuted = PdfColor.fromInt(0xFF64748B);
@@ -39,7 +40,8 @@ Future<void> descargarVentaPdf(Venta v) async {
           _seccion('Información del Evento', [
             _fila('Fecha', fechaEvento),
             if (v.horaInicio != null && v.horaFin != null)
-              _fila('Horario', '${v.horaInicio} – ${v.horaFin}'),
+              _fila('Horario',
+                  '${formatHora24a12(v.horaInicio!)} – ${formatHora24a12(v.horaFin!)}'),
             if (v.ubicacion != null && v.ubicacion!.isNotEmpty)
               _fila('Lugar', v.ubicacion!),
             if (v.homenajeado != null && v.homenajeado!.isNotEmpty)

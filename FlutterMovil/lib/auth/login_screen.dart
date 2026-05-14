@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
 import 'auth_controller.dart';
 
@@ -16,6 +17,9 @@ class _LoginScreenState extends State<LoginScreen>
   bool _loading = false;
   bool _pwVisible = false;
   String? _error;
+  bool _biometricDisponible = false;
+  bool _biometricConfigurada = false;
+  final LocalAuthentication _localAuth = LocalAuthentication();
 
   late final AnimationController _shakeCtrl;
   late final Animation<double> _shake;
@@ -55,6 +59,129 @@ class _LoginScreenState extends State<LoginScreen>
       duration: const Duration(milliseconds: 700),
     )..forward();
     _fade = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+
+    _verificarBiometria();
+  }
+
+  Future<void> _verificarBiometria() async {
+    try {
+      final disponible = await _localAuth.canCheckBiometrics;
+      final soportado = await _localAuth.isDeviceSupported();
+      final biometricos = await _localAuth.getAvailableBiometrics();
+
+      final tieneHuella = biometricos.contains(BiometricType.fingerprint) ||
+          biometricos.contains(BiometricType.strong) ||
+          biometricos.isNotEmpty;
+
+      if (!mounted) return;
+
+      final configurada =
+          await context.read<AuthController>().tieneBiometricaConfigurada();
+
+      if (!mounted) return;
+      setState(() {
+        _biometricDisponible = (disponible || soportado) && tieneHuella;
+        _biometricConfigurada = configurada;
+      });
+
+      // Auto-intentar huella si ya tiene credenciales guardadas
+      if (_biometricDisponible && _biometricConfigurada) {
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          await Future.delayed(const Duration(milliseconds: 600));
+          if (mounted) _autenticarConHuella();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error al verificar biometría: $e');
+    }
+  }
+
+  Future<void> _autenticarConHuella() async {
+    setState(() => _error = null);
+    try {
+      final autenticado = await _localAuth.authenticate(
+        localizedReason:
+            'Coloca tu dedo en el sensor para ingresar a Mariachi Admin',
+        options: const AuthenticationOptions(
+          biometricOnly: true,
+          stickyAuth: true,
+          useErrorDialogs: true,
+        ),
+      );
+      if (!autenticado || !mounted) return;
+
+      setState(() => _loading = true);
+      final controller = context.read<AuthController>();
+      final ok = await controller.loginConHuella();
+      if (!mounted) return;
+      setState(() => _loading = false);
+
+      if (!ok) {
+        setState(() =>
+            _error = 'No se pudo iniciar sesión. Ingresa con tu contraseña.');
+      }
+    } on Exception catch (e) {
+      debugPrint('Error biométrico: $e');
+      if (mounted) {
+        final msg = e.toString();
+        if (!msg.contains('canceled') && !msg.contains('cancelled')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error de huella: $msg'),
+              backgroundColor: Colors.deepOrange,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// Muestra el diálogo para activar la huella después de un login exitoso
+  Future<void> _ofrecerActivarHuella(String email, String password) async {
+    if (!_biometricDisponible || !mounted) return;
+
+    final activar = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Row(children: [
+          Icon(Icons.fingerprint, color: Color(0xFFE53935)),
+          SizedBox(width: 10),
+          Text('Acceso con huella'),
+        ]),
+        content: const Text(
+          '¿Deseas activar el acceso con huella dactilar para la próxima vez?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Ahora no'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFE53935)),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Activar'),
+          ),
+        ],
+      ),
+    );
+
+    if (activar == true && mounted) {
+      await context.read<AuthController>().guardarCredencialesBiometricas(
+            email: email,
+            password: password,
+          );
+      if (mounted) {
+        setState(() => _biometricConfigurada = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Huella activada. Úsala en tu próximo ingreso.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -68,25 +195,41 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _submit() async {
+    final email = _email.text.trim();
+    final password = _password.text;
     setState(() {
       _error = null;
       _loading = true;
     });
     try {
-      final ok = await context.read<AuthController>().login(
-            email: _email.text.trim(),
-            password: _password.text,
-          );
+      // 1. Verificar credenciales sin navegar aún
+      final authController = context.read<AuthController>();
+      final ok = await authController.loginSinNavegar(
+        email: email,
+        password: password,
+      );
       if (!mounted) return;
+      setState(() => _loading = false);
+
       if (!ok) {
         _shakeCtrl.forward(from: 0);
         setState(() => _error = 'Credenciales incorrectas. Acceso denegado.');
+        return;
       }
+
+      // 2. Si la huella está disponible pero no configurada, ofrecer activarla
+      if (_biometricDisponible && !_biometricConfigurada) {
+        await _ofrecerActivarHuella(email, password);
+      }
+
+      // 3. Ahora sí navegar (notificar a la app que está autenticado)
+      if (mounted) authController.confirmarLogin();
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'Error de conexión. Verifica tu red.');
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _error = 'Error de conexión. Verifica tu red.';
+      });
     }
   }
 
@@ -408,6 +551,35 @@ class _LoginScreenState extends State<LoginScreen>
           ),
 
           const SizedBox(height: 20),
+
+          // Botón huella dactilar
+          if (_biometricDisponible) ...[
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: OutlinedButton.icon(
+                onPressed: _loading ? null : _autenticarConHuella,
+                icon: const Icon(Icons.fingerprint,
+                    size: 22, color: Colors.white70),
+                label: Text(
+                  _biometricConfigurada
+                      ? 'Ingresar con huella'
+                      : 'Configurar huella',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white70,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF4A4A4A)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15)),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
 
           // Divisor
           Row(

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/theme/app_colors.dart';
 import '../core/models/app_models.dart';
+import '../core/format/time.dart';
 import 'ensayo_controller.dart';
 
 class EnsayoDetalleScreen extends StatefulWidget {
@@ -42,50 +43,6 @@ class _EnsayoDetalleScreenState extends State<EnsayoDetalleScreen> {
             : 'Error al cargar el detalle';
       }
     });
-  }
-
-  Future<void> _toggleEstado() async {
-    if (_ensayo == null) return;
-    final esListo = _ensayo!.estado == EstadoEnsayo.listo;
-    final controller = context.read<EnsayoController>();
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(esListo ? 'Marcar como Pendiente' : 'Marcar como Listo'),
-        content: Text(
-          esListo
-              ? '¿Confirmas marcar este ensayo como pendiente?'
-              : '¿Confirmas marcar este ensayo como listo?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(esListo ? 'Marcar Pendiente' : 'Marcar Listo'),
-          ),
-        ],
-      ),
-    );
-
-    if (ok != true) return;
-
-    final success = esListo
-        ? await controller.marcarComoPendiente(_ensayo!.id)
-        : await controller.marcarComoListo(_ensayo!.id);
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-            success ? 'Estado actualizado exitosamente' : controller.errorMsg),
-        backgroundColor: success ? Colors.green : AppColors.primary,
-      ));
-      if (success) _cargarDetalle();
-    }
   }
 
   Future<void> _confirmEliminar() async {
@@ -149,22 +106,6 @@ class _EnsayoDetalleScreenState extends State<EnsayoDetalleScreen> {
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert),
               itemBuilder: (_) => [
-                PopupMenuItem(
-                  value: 'toggle',
-                  child: Row(children: [
-                    Icon(
-                      _ensayo!.estado == EstadoEnsayo.listo
-                          ? Icons.pending_outlined
-                          : Icons.check_circle_outline,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(_ensayo!.estado == EstadoEnsayo.listo
-                        ? 'Marcar como Pendiente'
-                        : 'Marcar como Listo'),
-                  ]),
-                ),
-                const PopupMenuDivider(),
                 const PopupMenuItem(
                   value: 'eliminar',
                   child: Row(children: [
@@ -175,7 +116,6 @@ class _EnsayoDetalleScreenState extends State<EnsayoDetalleScreen> {
                 ),
               ],
               onSelected: (v) {
-                if (v == 'toggle') _toggleEstado();
                 if (v == 'eliminar') _confirmEliminar();
               },
             ),
@@ -228,7 +168,7 @@ class _EnsayoDetalleScreenState extends State<EnsayoDetalleScreen> {
               ),
               _Fila(
                 label: 'Hora',
-                valor: DateFormat('HH:mm').format(e.fechaHora),
+                valor: formatDateTimeHora12(e.fechaHora),
               ),
               _Fila(label: 'Lugar', valor: e.lugar),
               if (e.ubicacion != null && e.ubicacion!.isNotEmpty)
@@ -270,15 +210,15 @@ class _EstadoBanner extends StatelessWidget {
   final Ensayo ensayo;
   const _EstadoBanner({required this.ensayo});
 
-  Color get _bg => ensayo.estado == EstadoEnsayo.listo
+  Color get _bg => ensayo.estadoEfectivo == EstadoEnsayo.listo
       ? const Color(0xFFDCFCE7)
       : const Color(0xFFFEF3C7);
 
-  Color get _fg => ensayo.estado == EstadoEnsayo.listo
+  Color get _fg => ensayo.estadoEfectivo == EstadoEnsayo.listo
       ? const Color(0xFF047857)
       : const Color(0xFFB45309);
 
-  IconData get _icon => ensayo.estado == EstadoEnsayo.listo
+  IconData get _icon => ensayo.estadoEfectivo == EstadoEnsayo.listo
       ? Icons.check_circle_outline
       : Icons.hourglass_empty_rounded;
 
@@ -294,7 +234,7 @@ class _EstadoBanner extends StatelessWidget {
         const SizedBox(width: 10),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(
-            ensayo.estado == EstadoEnsayo.listo ? 'Listo' : 'Pendiente',
+            ensayo.estadoEfectivo == EstadoEnsayo.listo ? 'Listo' : 'Pendiente',
             style: TextStyle(
                 color: _fg, fontWeight: FontWeight.w900, fontSize: 15),
           ),

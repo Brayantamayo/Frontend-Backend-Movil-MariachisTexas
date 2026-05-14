@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/format/currency.dart';
+import '../core/format/time.dart';
 import '../core/theme/app_colors.dart';
 import 'package:mariachi_admin/core/models/app_models.dart';
 import '../ui/screen_header.dart';
@@ -615,7 +616,7 @@ class _VentaCard extends StatelessWidget {
                           : '${venta.fechaVenta.day}/${venta.fechaVenta.month}/${venta.fechaVenta.year}'),
                   if (venta.horaInicio != null && venta.horaFin != null)
                     _info(Icons.schedule,
-                        '${venta.horaInicio} - ${venta.horaFin}'),
+                        '${formatHora24a12(venta.horaInicio!)} - ${formatHora24a12(venta.horaFin!)}'),
                   if (venta.ubicacion != null && venta.ubicacion!.isNotEmpty)
                     _info(Icons.place_outlined, venta.ubicacion!),
                 ],
